@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+.conda/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Large model files
+sr_models/
+*.pkl
+*.pt
+*.pth
+
+# Temporary SR files
+tmp/
+*.jl
+
+# Large data / trajectories
+*.dump
+*.lammpstrj
+*.xyz
+*.lammps
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Checkpoint files
+done_*.json
+checkpoint_*.json
