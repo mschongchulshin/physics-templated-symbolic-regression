@@ -1,3 +1,5 @@
+import os
+import tempfile
 """
 SR Sensitivity worker: run with `python3 sr_sens_worker.py <worker_id> <n_workers>`
 Each worker handles jobs where job_index % n_workers == worker_id
@@ -10,9 +12,11 @@ from pysr import PySRRegressor
 
 WORKER_ID = int(sys.argv[1])
 N_WORKERS = int(sys.argv[2])
-OUT_CSV = Path(f"/tmp/sr_sens_w{WORKER_ID}.csv")
+OUT_CSV = OUTDIR / "sr_sens_w{WORKER_ID}.csv"
 
-BASE = Path("/Users/hongchulshin/Desktop/696/github_repo/physics-template-SR-HEA")
+BASE = Path(__file__).resolve().parent.parent
+OUTDIR = BASE / "results" / "generated"
+OUTDIR.mkdir(parents=True, exist_ok=True)
 EQ_JSON = BASE / "equations/all_equations_660.json"
 
 data = pd.read_csv(BASE / "data/raw/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
@@ -197,7 +201,8 @@ for ji, (exp, tmpl, tkey, parsimony, niter, maxsize) in enumerate(my_jobs):
         s2_target = y
         X_feat = get_stage2_features(tmpl)
 
-    tmpdir = f"/tmp/sr_sens/w{WORKER_ID}_{tmpl}_{tkey}_{exp[0]}{parsimony}_{niter}"
+    tmpdir = os.path.join(tempfile.gettempdir(),
+                          f"sr_sens/w{WORKER_ID}_{tmpl}_{tkey}_{exp[0]}{parsimony}_{niter}")
     os.makedirs(tmpdir, exist_ok=True)
     try:
         m = make_pysr(niter, maxsize, parsimony, tmpdir)

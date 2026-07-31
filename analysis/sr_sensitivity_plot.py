@@ -1,7 +1,7 @@
 """
 SR sensitivity final plots.
 Run after all workers complete.
-Outputs SVG (editable text) + PNG + source CSVs to /tmp/sr_sens_out/
+Outputs SVG (editable text), PNG and source CSVs to results/generated/
 """
 import numpy as np
 import pandas as pd
@@ -11,13 +11,13 @@ matplotlib.rcParams['svg.fonttype'] = 'none'
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-OUT = Path("/tmp/sr_sens_out")
+OUT = OUTDIR / "sr_sens_out"
 OUT.mkdir(exist_ok=True)
 
 # ── Merge all worker CSVs ─────────────────────────────────────────────────────
 dfs = []
 for i in range(5):
-    p = Path(f"/tmp/sr_sens_w{i}.csv")
+    p = OUTDIR / "sr_sens_w{i}.csv"
     if p.exists():
         dfs.append(pd.read_csv(p))
 df = pd.concat(dfs, ignore_index=True)

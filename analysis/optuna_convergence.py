@@ -17,7 +17,9 @@ from sklearn.metrics import r2_score
 from xgboost import XGBRegressor
 from pathlib import Path
 
-BASE = Path("/Users/hongchulshin/Desktop/696/github_repo/physics-template-SR-HEA")
+BASE = Path(__file__).resolve().parent.parent
+OUTDIR = BASE / "results" / "generated"
+OUTDIR.mkdir(parents=True, exist_ok=True)
 data = pd.read_csv(BASE / "data/raw/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
 feat = pd.read_csv(BASE / "data/features/features_13.csv")
 
@@ -222,9 +224,9 @@ for i, (tkey, tcol) in enumerate(ALL_TARGETS.items()):
         print(f"  DL {mname}: {bv[0]:.4f} ({len(hist)} trials)", flush=True)
 
 # Save raw data
-with open("/tmp/optuna_conv_data.json","w") as f:
+with open(OUTDIR / "optuna_conv_data.json","w") as f:
     json.dump({"ml": ml_conv, "dl": dl_conv}, f)
-print("\nData saved to /tmp/optuna_conv_data.json")
+print(f"\nData saved to {OUTDIR / 'optuna_conv_data.json'}")
 
 # ── Plot ──────────────────────────────────────────────────────────────────────
 tlist = list(ALL_TARGETS.keys())
@@ -254,6 +256,6 @@ def make_panel(conv_dict, models, colors, n_trials, title_prefix, fname):
     print(f"Saved: {fname}")
 
 make_panel(ml_conv, ML_MODELS, ML_COLORS, N_ML, "ML models (7)",
-           "/tmp/optuna_conv_ML.png")
+           OUTDIR / "optuna_conv_ML.png")
 make_panel(dl_conv, DL_MODELS, DL_COLORS, N_DL, "DL models (3)",
-           "/tmp/optuna_conv_DL.png")
+           OUTDIR / "optuna_conv_DL.png")

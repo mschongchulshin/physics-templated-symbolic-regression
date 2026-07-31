@@ -1,7 +1,7 @@
 """
 Re-render S1a, S1b, S2, S3 without titles.
 svg.fonttype='none' for editable text in PPT/Illustrator.
-Output SVGs and source-data CSVs to /tmp/supp/
+Output SVGs and source-data CSVs to results/generated/
 """
 import numpy as np, pandas as pd, json, matplotlib
 matplotlib.use("Agg")
@@ -10,9 +10,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 
-OUT = Path("/tmp/supp"); OUT.mkdir(exist_ok=True)
+OUT = OUTDIR / "supp"; OUT.mkdir(exist_ok=True)
 
-BASE_FEAT = Path("/Users/hongchulshin/Desktop/696/sr_elemental_features")
+BASE = Path(__file__).resolve().parent.parent
+BASE_FEAT = BASE / "data" / "features"
 
 # ── S1a: full 93-feature correlation heatmap ─────────────────────────────────
 print("S1a...", flush=True)
@@ -63,7 +64,7 @@ print(f"  S1b done. shape={corr_vif.shape}", flush=True)
 
 # ── S2 & S3: Optuna TPE convergence ──────────────────────────────────────────
 print("S2/S3...", flush=True)
-with open("/tmp/optuna_conv_data.json") as f:
+with open(OUTDIR / "optuna_conv_data.json") as f:
     conv = json.load(f)
 
 ml_conv = conv["ml"]

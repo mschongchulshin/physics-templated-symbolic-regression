@@ -97,87 +97,68 @@ for s in SEEDS:
 # ── 4. 9-template SR ─────────────────────────────────────────────────────────
 
 print("Loading 9-template SR...")
-# sr9_data[tmpl][tgt][seed][fold] = r2
-sr9_data = {}
-sr9_raw = []
 
-for s in SEEDS:
-    path = str(RES / f"checkpoint_s{s}to{s}.json")
-    if not os.path.exists(path):
-        print(f"  MISSING: {path}")
-        continue
-    cp = load_json(path)
-    for key, v in cp.items():
-        parts = key.split("__")
-        tgt, tmpl = parts[0], parts[1]
-        fold = int(parts[2].replace("f", ""))
-        r2 = v.get("test_r2", None)
-        elapsed = v.get("time", None)
-        sr9_raw.append({"seed": s, "template": tmpl, "target": tgt,
-                         "fold": fold, "r2": r2, "time_s": elapsed})
-        sr9_data.setdefault(tmpl, {}).setdefault(tgt, {}).setdefault(s, {})[fold] = r2
+CV = RES / "cv_results"
+
+
+def load_runs(csv_name, stem, has_template):
+    """Load one set of runs, preferring the deposited CSV.
+
+    The search writes checkpoint_*.json; .gitignore excludes that pattern, so a
+    clone only has the CSV. Both hold the same runs, keyed the same way.
+    """
+    csv_path = CV / csv_name
+    rows = []
+    if csv_path.exists():
+        df = pd.read_csv(csv_path).rename(columns={"test_r2": "r2"})
+        if "time_s" not in df.columns:
+            df["time_s"] = np.nan
+        rows = df.to_dict("records")
+    else:
+        for seed in SEEDS:
+            path = str(RES / f"{stem}_s{seed}to{seed}.json")
+            if not os.path.exists(path):
+                print(f"  MISSING: {path}")
+                continue
+            for key, v in load_json(path).items():
+                parts = key.split("__")
+                rows.append({
+                    "seed": seed, "target": parts[0],
+                    "template": parts[1] if has_template else None,
+                    "fold": int(parts[2 if has_template else 1]
+                                .replace("f", "")),
+                    "r2": v.get("test_r2"), "time_s": v.get("time")})
+
+    nested = {}
+    for r in rows:
+        if has_template:
+            (nested.setdefault(r["template"], {})
+                   .setdefault(r["target"], {})
+                   .setdefault(r["seed"], {}))[r["fold"]] = r["r2"]
+        else:
+            (nested.setdefault(r["target"], {})
+                   .setdefault(r["seed"], {}))[r["fold"]] = r["r2"]
+    return rows, nested
+
+
+# sr9_data[tmpl][tgt][seed][fold] = r2
+sr9_raw, sr9_data = load_runs("sr_9templates_raw.csv", "checkpoint", True)
 
 # ── 5. Freeform SR ───────────────────────────────────────────────────────────
 
 print("Loading Freeform SR...")
 # ff_data[tgt][seed][fold] = r2
-ff_data = {}
-ff_raw = []
-
-for s in SEEDS:
-    path = str(RES / f"checkpoint_freeform_s{s}to{s}.json")
-    if not os.path.exists(path):
-        print(f"  MISSING: {path}")
-        continue
-    cp = load_json(path)
-    for key, v in cp.items():
-        parts = key.split("__")
-        tgt = parts[0]
-        fold = int(parts[2].replace("f", ""))
-        r2 = v.get("test_r2", None)
-        ff_raw.append({"seed": s, "target": tgt, "fold": fold, "r2": r2})
-        ff_data.setdefault(tgt, {}).setdefault(s, {})[fold] = r2
+ff_raw, ff_data = load_runs("sr_freeform.csv", "checkpoint_freeform", False)
 
 # ── 6. 6-feat control SR ─────────────────────────────────────────────────────
 
 print("Loading 6-feat control SR...")
-sf6_data = {}
-sf6_raw = []
-
-for s in SEEDS:
-    path = str(RES / f"checkpoint_6feat_s{s}to{s}.json")
-    if not os.path.exists(path):
-        print(f"  MISSING: {path}")
-        continue
-    cp = load_json(path)
-    for key, v in cp.items():
-        parts = key.split("__")
-        tgt = parts[0]
-        fold = int(parts[2].replace("f", ""))
-        r2 = v.get("test_r2", None)
-        sf6_raw.append({"seed": s, "target": tgt, "fold": fold, "r2": r2})
-        sf6_data.setdefault(tgt, {}).setdefault(s, {})[fold] = r2
+sf6_raw, sf6_data = load_runs("sr_6feat_control.csv", "checkpoint_6feat", False)
 
 # ── 7. Shuffled-y ─────────────────────────────────────────────────────────────
 
 print("Loading Shuffled-y...")
-shuf_data = {}
-shuf_raw = []
-
-for s in SEEDS:
-    path = str(RES / f"checkpoint_shuffled_s{s}to{s}.json")
-    if not os.path.exists(path):
-        print(f"  MISSING: {path}")
-        continue
-    cp = load_json(path)
-    for key, v in cp.items():
-        parts = key.split("__")
-        tgt, tmpl = parts[0], parts[1]
-        fold = int(parts[2].replace("f", ""))
-        r2 = v.get("test_r2", None)
-        shuf_raw.append({"seed": s, "template": tmpl, "target": tgt,
-                          "fold": fold, "r2": r2})
-        shuf_data.setdefault(tmpl, {}).setdefault(tgt, {}).setdefault(s, {})[fold] = r2
+shuf_raw, shuf_data = load_runs("shuffled_y_raw.csv", "checkpoint_shuffled", True)
 
 # ── 8. ML Optuna fullfit ─────────────────────────────────────────────────────
 

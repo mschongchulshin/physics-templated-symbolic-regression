@@ -12,3 +12,6 @@ matplotlib>=3.7
 seaborn>=0.12
 openpyxl>=3.0
 xlsxwriter>=3.0
+gplearn==0.4.3
+sympy>=1.12
+torch-geometric>=2.5
