@@ -85,8 +85,10 @@ without rerunning the search.
 | `data/compositions/compositions_228.csv` | the unique compositions |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
 
-Molecular-dynamics trajectories are not deposited here for size. They were
-generated in LAMMPS with the Farkas-Caro EAM potential, available from
+The molecular-dynamics trajectories and the LAMMPS input scripts that produced
+them are not part of this deposit. The corpus above is what the symbolic
+regression consumes, and it is complete. Simulations used the Farkas-Caro EAM
+potential, available from
 <https://www.ctcms.nist.gov/potentials/entry/2018--Farkas-D-Caro-A--Fe-Ni-Cr-Co-Cu/>.
 
 ## Citation
