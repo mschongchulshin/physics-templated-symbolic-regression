@@ -98,15 +98,11 @@ for s in SEEDS:
 
 print("Loading 9-template SR...")
 
-CV = RES / "cv_results"
+CV = RES / "cv_results"   # checkpoint_*.json is gitignored; CSVs ship instead
 
 
 def load_runs(csv_name, stem, has_template):
-    """Load one set of runs, preferring the deposited CSV.
-
-    The search writes checkpoint_*.json; .gitignore excludes that pattern, so a
-    clone only has the CSV. Both hold the same runs, keyed the same way.
-    """
+    """Load runs from the deposited CSV, or the checkpoints if present."""
     csv_path = CV / csv_name
     rows = []
     if csv_path.exists():
