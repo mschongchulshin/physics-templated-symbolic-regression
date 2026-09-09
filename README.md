@@ -44,8 +44,8 @@ results/       cross-validation results and the selected hyperparameters
 ## Install
 
 ```bash
-git clone https://github.com/<user>/physics-template-SR-HEA.git
-cd physics-template-SR-HEA
+git clone https://github.com/mschongchulshin/physics-templated-symbolic-regression.git
+cd physics-templated-symbolic-regression
 pip install -r requirements.txt
 ```
 
@@ -132,7 +132,7 @@ in once they are issued.
 }
 
 @software{ptsr_code,
-  title     = {physics-template-SR-HEA},
+  title     = {physics-templated-symbolic-regression},
   author    = {Shin, Hongchul and Moon, Chanhyuk and Jo, Hyeonjin and
                Hwang, Kwang Yeon and Cheong, Jun Young and Jang, Hyo-Sun and
                Yoon, Taeyoung},
