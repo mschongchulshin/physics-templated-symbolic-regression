@@ -125,7 +125,8 @@ in once they are issued.
   title   = {Physics-Templated Symbolic Regression discovers closed-form,
              differentiable equations for high-entropy alloy properties},
   author  = {Shin, Hongchul and Moon, Chanhyuk and Jo, Hyeonjin and
-             Cheong, Jun Young and Jang, Hyo-Sun and Yoon, Taeyoung},
+             Hwang, Kwang Yeon and Cheong, Jun Young and Jang, Hyo-Sun and
+             Yoon, Taeyoung},
   year    = {2026},
   doi     = {}
 }
@@ -133,7 +134,8 @@ in once they are issued.
 @software{ptsr_code,
   title     = {physics-template-SR-HEA},
   author    = {Shin, Hongchul and Moon, Chanhyuk and Jo, Hyeonjin and
-               Cheong, Jun Young and Jang, Hyo-Sun and Yoon, Taeyoung},
+               Hwang, Kwang Yeon and Cheong, Jun Young and Jang, Hyo-Sun and
+               Yoon, Taeyoung},
   publisher = {Zenodo},
   doi       = {}
 }

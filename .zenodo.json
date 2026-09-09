@@ -5,12 +5,34 @@
   "license": "mit",
   "access_right": "open",
   "creators": [
-    {"name": "Shin, Hongchul", "affiliation": "Department of Biotechnology, College of Life Sciences and Biotechnology, Korea University, Seoul, Republic of Korea"},
-    {"name": "Moon, Chanhyuk", "affiliation": "Department of Mechanical Engineering, Changwon National University, Changwon, Republic of Korea"},
-    {"name": "Jo, Hyeonjin", "affiliation": "Department of Mechanical Engineering, Changwon National University, Changwon, Republic of Korea"},
-    {"name": "Cheong, Jun Young", "affiliation": "James Watt School of Engineering, University of Glasgow, Glasgow, United Kingdom"},
-    {"name": "Jang, Hyo-Sun", "affiliation": "Materials Processing Research Division, Korea Institute of Materials Science, Changwon, Republic of Korea"},
-    {"name": "Yoon, Taeyoung", "affiliation": "Department of Mechanical Engineering, Changwon National University, Changwon, Republic of Korea"}
+    {
+      "name": "Shin, Hongchul",
+      "affiliation": "Department of Biotechnology, College of Life Sciences and Biotechnology, Korea University, Seoul, Republic of Korea"
+    },
+    {
+      "name": "Moon, Chanhyuk",
+      "affiliation": "Department of Mechanical Engineering, Changwon National University, Changwon, Republic of Korea"
+    },
+    {
+      "name": "Jo, Hyeonjin",
+      "affiliation": "Department of Mechanical Engineering, Changwon National University, Changwon, Republic of Korea"
+    },
+    {
+      "name": "Hwang, Kwang Yeon",
+      "affiliation": "Department of Biotechnology, College of Life Sciences and Biotechnology, Korea University, Seoul, Republic of Korea"
+    },
+    {
+      "name": "Cheong, Jun Young",
+      "affiliation": "James Watt School of Engineering, University of Glasgow, Glasgow, United Kingdom"
+    },
+    {
+      "name": "Jang, Hyo-Sun",
+      "affiliation": "Materials Processing Research Division, Korea Institute of Materials Science, Changwon, Republic of Korea"
+    },
+    {
+      "name": "Yoon, Taeyoung",
+      "affiliation": "Department of Mechanical Engineering, Changwon National University, Changwon, Republic of Korea"
+    }
   ],
   "keywords": [
     "symbolic regression",
