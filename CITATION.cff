@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using these metadata.
+title: >-
+  Physics-Templated Symbolic Regression discovers closed-form,
+  differentiable equations for high-entropy alloy properties
+type: software
+license: MIT
+authors:
+  - family-names: Shin
+    given-names: Hongchul
+    affiliation: >-
+      Department of Biotechnology, College of Life Sciences and
+      Biotechnology, Korea University, Seoul, Republic of Korea
+  - family-names: Moon
+    given-names: Chanhyuk
+    affiliation: >-
+      Department of Mechanical Engineering, Changwon National
+      University, Changwon, Republic of Korea
+  - family-names: Jo
+    given-names: Hyeonjin
+    affiliation: >-
+      Department of Mechanical Engineering, Changwon National
+      University, Changwon, Republic of Korea
+  - family-names: Cheong
+    given-names: Jun Young
+    affiliation: >-
+      James Watt School of Engineering, University of Glasgow,
+      Glasgow, United Kingdom
+  - family-names: Jang
+    given-names: Hyo-Sun
+    affiliation: >-
+      Materials Processing Research Division, Korea Institute of
+      Materials Science, Changwon, Republic of Korea
+  - family-names: Yoon
+    given-names: Taeyoung
+    affiliation: >-
+      Department of Mechanical Engineering, Changwon National
+      University, Changwon, Republic of Korea
+keywords:
+  - symbolic regression
+  - high-entropy alloys
+  - interpretable machine learning
+  - molecular dynamics
+  - inverse design

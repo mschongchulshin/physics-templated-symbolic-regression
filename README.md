@@ -117,7 +117,34 @@ ours.
 
 ## Citation
 
-Add once the DOI is issued.
+Cite the paper and, separately, the archived release of this code. Both DOIs go
+in once they are issued.
+
+```bibtex
+@article{ptsr2026,
+  title   = {Physics-Templated Symbolic Regression discovers closed-form,
+             differentiable equations for high-entropy alloy properties},
+  author  = {Shin, Hongchul and Moon, Chanhyuk and Jo, Hyeonjin and
+             Cheong, Jun Young and Jang, Hyo-Sun and Yoon, Taeyoung},
+  year    = {2026},
+  doi     = {}
+}
+
+@software{ptsr_code,
+  title     = {physics-template-SR-HEA},
+  author    = {Shin, Hongchul and Moon, Chanhyuk and Jo, Hyeonjin and
+               Cheong, Jun Young and Jang, Hyo-Sun and Yoon, Taeyoung},
+  publisher = {Zenodo},
+  doi       = {}
+}
+```
+
+Archiving a release: enable this repository in
+[Zenodo's GitHub settings](https://zenodo.org/account/settings/github/), then
+publish a GitHub release. Zenodo mints a DOI for that tag and reads the author
+list, licence and keywords from `.zenodo.json` in this directory. Each later
+release gets its own DOI, plus a concept DOI that always resolves to the newest
+one; cite the version-specific DOI in the paper.
 
 ## License
 
