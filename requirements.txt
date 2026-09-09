@@ -15,3 +15,4 @@ xlsxwriter==3.2.9
 gplearn==0.4.3
 sympy==1.13.1
 torch-geometric==2.7.0
+shap==0.51.0

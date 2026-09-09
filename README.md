@@ -42,7 +42,8 @@ src/           the two-stage search, the nine templates, the ML and DL baselines
 baselines/     the published models re-trained on this corpus
 lodo/          leave-one-dataset-out over six cross-source folds
 inverse_design/  optimisation of the closed forms and the screening benchmark
-analysis/      hyperparameter sweeps, learning curves, supplementary figures
+analysis/      SHAP attribution, hyperparameter sweeps, learning curves,
+               supplementary figures
 results/       cross-validation results and the selected hyperparameters
 ```
 
@@ -68,9 +69,10 @@ Each command writes to `results/generated/`.
 |---|---|
 | Fig. 2a, 2b | `python src/run_sr_template.py && python src/compile_results.py` |
 | Fig. 2 baselines | `python baselines/lodo_comparison/run.py` |
-| Fig. 3 | `python src/run_sr_template.py` (the elected equation per target) |
+| Fig. 3 | `python src/run_sr_template.py`, which writes the elected equation per target |
+| Fig. 4 | `python analysis/shap_attribution.py && python analysis/shap_beeswarm.py` |
 | Fig. 5 | `python lodo/build_folds.py && python lodo/run_ptsr.py && python lodo/run_baselines.py` |
-| Fig. 6 | `python inverse_design/run_inverse_design.py` |
+| Fig. 6a-h | `python inverse_design/run_inverse_design.py` |
 | Fig. 6i | `python inverse_design/analysis_roc_interaction.py` |
 | Supp. Figs. 1, 2 | `python analysis/render_supp_figs.py` |
 | Supp. Figs. 3-5 | `python analysis/sr_sensitivity_worker.py <worker_id> <n_workers>` then `python analysis/sr_sensitivity_plot.py` |
