@@ -25,6 +25,15 @@ from scipy.optimize import minimize, differential_evolution, NonlinearConstraint
 from sklearn.metrics import r2_score
 import matplotlib.pyplot as plt
 import matplotlib
+
+def _load_sheet(path, sheet_name):
+    """Rows for one temperature, from the flat corpus."""
+    import pandas as _pd
+    _t = int(str(sheet_name).rstrip("Kk"))
+    _df = _pd.read_csv(path)
+    return _df[_df["T_K"] == _t].drop(columns=["T_K"]).reset_index(drop=True)
+
+
 matplotlib.rcParams.update({
     'font.size': 11,
     'font.family': 'Arial',
@@ -35,7 +44,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # fitted stage-1 models, written by src/run_sr_template.py
 RESULTS_DIR = str(ROOT / "results" / "sr_results_full")
 INVERSE_DIR = str(ROOT / "results" / "generated" / "inverse_design")
-DATA_FILE = str(ROOT / "data" / "CoCrCuFeNi_684_by_temperature.xlsx")
+DATA_FILE = str(ROOT / "data" / "CoCrCuFeNi_684.csv")
 TEMPS = {"80K": 80, "300K": 300, "1100K": 1100}
 os.makedirs(INVERSE_DIR, exist_ok=True)
 
@@ -390,7 +399,7 @@ def generate_md_candidates(models, n_candidates=10):
     # Load training data compositions
     dfs = []
     for sheet, temp in TEMPS.items():
-        df = pd.read_excel(DATA_FILE, sheet_name=sheet)
+        df = _load_sheet(DATA_FILE, sheet)
         dfs.append(df)
     train_data = pd.concat(dfs, ignore_index=True)
     existing_comps = set(

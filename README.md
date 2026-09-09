@@ -34,8 +34,9 @@ form that governs the measured response is unknown.
 ## Layout
 
 ```
-data/          the corpus, the model inputs, and the experimental measurements
-               used for the cross-source folds
+data/          the corpus, its derived features, the experimental measurements
+               behind the cross-source folds, and the two workbooks submitted
+               with the paper
 equations/     all 660 discovered equations, sympy-parseable
 src/           the two-stage search, the nine templates, the ML and DL baselines
 baselines/     the published models re-trained on this corpus
@@ -65,13 +66,14 @@ Each command writes to `results/generated/`.
 
 | Figure | Command |
 |---|---|
-| Fig. 1c, 1d | `python src/run_sr_template.py && python src/compile_results.py` |
-| Fig. 1c baselines | `python baselines/lodo_comparison/run.py` |
-| Fig. 3 | `python lodo/build_folds.py && python lodo/run_ptsr.py && python lodo/run_baselines.py` |
-| Fig. 4 | `python inverse_design/run_inverse_design.py` |
-| Fig. 4d | `python inverse_design/analysis_roc_interaction.py` |
+| Fig. 2a, 2b | `python src/run_sr_template.py && python src/compile_results.py` |
+| Fig. 2 baselines | `python baselines/lodo_comparison/run.py` |
+| Fig. 3 | `python src/run_sr_template.py` (the elected equation per target) |
+| Fig. 5 | `python lodo/build_folds.py && python lodo/run_ptsr.py && python lodo/run_baselines.py` |
+| Fig. 6 | `python inverse_design/run_inverse_design.py` |
+| Fig. 6i | `python inverse_design/analysis_roc_interaction.py` |
 | Supp. Figs. 1, 2 | `python analysis/render_supp_figs.py` |
-| Supp. Figs. 3-5 | `python analysis/sr_sensitivity_worker.py && python analysis/sr_sensitivity_plot.py` |
+| Supp. Figs. 3-5 | `python analysis/sr_sensitivity_worker.py <worker_id> <n_workers>` then `python analysis/sr_sensitivity_plot.py` |
 | Supp. Figs. 6, 7 | `python analysis/optuna_convergence.py` |
 | Supp. Fig. 8 | `python src/run_shuffled_y.py` |
 
@@ -98,14 +100,13 @@ exact replay, at a large cost in wall time.
 
 | File | What it holds |
 |---|---|
-| `data/CoCrCuFeNi_684.csv` | the training corpus, 228 compositions x 3 temperatures, all twelve targets |
-| `data/CoCrCuFeNi_684_by_temperature.xlsx` | the same corpus with one sheet per temperature, the form the baselines read |
-| `data/compositions_228.csv` | the unique compositions |
-| `data/features_13.csv` | the thirteen model inputs |
-| `data/features_93_library.csv` | the feature library before VIF reduction |
-| `data/features_vif50.csv` | what survived VIF < 50, before the two removed on physical grounds |
-| `data/LODO_experimental_dataset.csv` | the experimental alloy measurements behind the cross-source folds |
-| `data/Supplementary_Data_1_MD_corpus.xlsx` | the corpus as deposited with the paper |
+| `data/CoCrCuFeNi_684.csv` | the corpus the code reads, 232 compositions x 3 temperatures. Supplementary Data 1 is the 228 that were trained on; this adds the four held out for verification |
+| `data/compositions_228.csv` | the composition grid on its own |
+| `data/features_13.csv` | the thirteen model inputs, per sample |
+| `data/features_93_library.csv` | the feature library before VIF reduction, per sample. Source Data holds its correlation matrix, not the values |
+| `data/features_vif50.csv` | what survived VIF < 50, per sample, before the two removed on physical grounds |
+| `data/LODO_experimental_dataset.csv` | the experimental measurements the cross-source folds are cut from. Source Data holds the fold results, not the underlying table |
+| `data/Supplementary_Data_1_MD_corpus.xlsx` | the training corpus as submitted with the paper |
 | `data/Source_Data.xlsx` | the numbers behind every figure panel and supplementary table |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
 

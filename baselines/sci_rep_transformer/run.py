@@ -45,11 +45,25 @@ from sklearn.metrics import r2_score
 from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import StandardScaler
 
+def _load_sheet(path, sheet_name):
+    """Rows for one temperature, from the flat corpus.
+
+    These baselines were written against a workbook with one sheet per
+    temperature. The corpus is deposited as a single CSV, so the sheet name is
+    read as the temperature it stands for.
+    """
+    import pandas as _pd
+    _t = int(str(sheet_name).rstrip("Kk"))
+    _df = _pd.read_csv(path)
+    return _df[_df["T_K"] == _t].drop(columns=["T_K"]).reset_index(drop=True)
+
+
+
 warnings.filterwarnings("ignore")
 torch.set_num_threads(2)
 
 BASE = str(Path(__file__).resolve().parent.parent)
-DATA_FILE = f"{BASE}/data/CoCrCuFeNi_684_by_temperature.xlsx"
+DATA_FILE = f"{BASE}/data/CoCrCuFeNi_684.csv"
 FEAT_FILE = f"{BASE}/data/features_13.csv"
 OUT_DIR = f"{BASE}/baselines/sci_rep_transformer"
 OUT_JSON = f"{OUT_DIR}/results.json"
@@ -81,7 +95,7 @@ print(f"Threads: torch={torch.get_num_threads()} OMP={os.environ.get('OMP_NUM_TH
 TEMPS = {"80K": 80, "300K": 300, "1100K": 1100}
 dfs = []
 for sheet, temp in TEMPS.items():
-    df = pd.read_excel(DATA_FILE, sheet_name=sheet)
+    df = _load_sheet(DATA_FILE, sheet)
     df["T"] = temp
     dfs.append(df)
 data = pd.concat(dfs, ignore_index=True)

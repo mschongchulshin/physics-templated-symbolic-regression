@@ -10,6 +10,15 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 import os
 from pathlib import Path
 import warnings
+
+def _load_sheet(path, sheet_name):
+    """Rows for one temperature, from the flat corpus."""
+    import pandas as _pd
+    _t = int(str(sheet_name).rstrip("Kk"))
+    _df = _pd.read_csv(path)
+    return _df[_df["T_K"] == _t].drop(columns=["T_K"]).reset_index(drop=True)
+
+
 warnings.filterwarnings("ignore")
 
 # ── Constants ──
@@ -19,7 +28,7 @@ COMP_COLS = ["Co(%)", "Cr(%)", "Cu(%)", "Fe(%)", "Ni(%)"]
 SHEET_TEMP = {"80K": 80, "300K": 300, "1100K": 1100}
 
 REPO     = Path(__file__).resolve().parent.parent
-DATA_PATH = REPO / "data/CoCrCuFeNi_684_by_temperature.xlsx"
+DATA_PATH = REPO / "data/CoCrCuFeNi_684.csv"
 OUT_DIR   = REPO / "data/features"
 
 # Properties to exclude (non-physical / index-like)
@@ -40,7 +49,7 @@ print("=" * 60)
 
 frames = []
 for sheet, T in SHEET_TEMP.items():
-    df = pd.read_excel(DATA_PATH, sheet_name=sheet)
+    df = _load_sheet(DATA_PATH, sheet)
     df = df[COMP_COLS].copy()
     df["T"] = T
     frames.append(df)
