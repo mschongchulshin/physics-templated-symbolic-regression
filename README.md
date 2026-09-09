@@ -1,6 +1,8 @@
 <p align="center">
-  <img src="docs_banner.png" alt="Left, the PT-SR workflow. Right, the selected equation for each of the
-  twelve targets plotted over composition at 80, 300 and 1100 K." width="100%">
+  <img src="docs_banner.png" alt="Left, the PT-SR workflow: a genetic-programming search, the two-stage
+  template competition, and the shared forward and inverse use of the elected
+  equation. Right, the selected equation for each of the twelve targets,
+  plotted over composition at 80, 300 and 1100 K." width="100%">
 </p>
 
 # Physics-Templated Symbolic Regression for High-Entropy Alloys
@@ -104,7 +106,7 @@ exact replay, at a large cost in wall time.
 | `data/features_vif50.csv` | what survived VIF < 50, before the two removed on physical grounds |
 | `data/LODO_experimental_dataset.csv` | the experimental alloy measurements behind the cross-source folds |
 | `data/Supplementary_Data_1_MD_corpus.xlsx` | the corpus as deposited with the paper |
-| `data/Source_Data.xlsx` | source data for every figure and supplementary table |
+| `data/Source_Data.xlsx` | the numbers behind every figure panel and supplementary table |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
 
 The molecular-dynamics trajectories and the LAMMPS input scripts that produced
