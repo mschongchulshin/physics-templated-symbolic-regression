@@ -1,6 +1,7 @@
 <p align="center">
-  <img src="docs_banner.png" alt="Fitted parameters against test accuracy for
-  ten methods over twelve targets" width="100%">
+  <img src="docs_banner.png" alt="Left, the PT-SR workflow. Right,
+  cross-validated accuracy on twelve targets against fitted model size for
+  ten methods." width="100%">
 </p>
 
 # Physics-Templated Symbolic Regression for High-Entropy Alloys
@@ -9,23 +10,25 @@ Code and data for **"Physics-Templated Symbolic Regression discovers closed-form
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## What this is
+## Abstract
 
-Symbolic regression usually searches an unconstrained space of expressions. Here
-the search is split in two and each half is given a physical form to fill in.
-Stage 1 fits a composition function g(x) at a single temperature. Stage 2 fits a
-temperature function f(x, T) to the residual ratios, choosing among nine
-physics-motivated templates, and BIC picks the winner.
-
-The result is one closed-form equation per target: four fitted coefficients
-against the 28,065 to 436,147 of the published surrogates it is benchmarked
-against, at accuracy that is statistically equivalent on the majority of the
-twelve targets. Because the output is an equation rather than a fitted object,
-it can be differentiated analytically, which is what makes the inverse design in
-the paper possible.
-
-The system is CoCrCuFeNi, 232 compositions at 80, 300 and 1100 K, with twelve
-mechanical and microstructural targets from molecular dynamics.
+High-entropy alloys open a composition space too large to search by experiment,
+and black-box machine-learning surrogates now predict their properties with R²
+above 0.99. A surrogate returns a number and not an equation, so its prediction
+cannot be interpreted, inspected against physical law, or differentiated for
+design. Here we constrain a symbolic-regression search with nine competing
+physical templates and let a model-selection criterion elect the winner for each
+property. Trained on a 684-point molecular-dynamics corpus of CoCrCuFeNi, our
+method returns one closed-form equation per target property. The equation for
+ultimate tensile strength reaches a test R² of 0.994 with only four parameters,
+replacing a surrogate that reaches the same accuracy with 4.4 × 10⁵. Used as a
+design objective, the equation extrapolates beyond the training envelope to
+compositions whose measured strength exceeds the highest and falls below the
+lowest in the corpus. The same procedure holds on independent experimental
+alloys sharing no elements with the corpus, reaching R² above 0.97 on folds of
+only four measurements, where black-box models fall below zero. The approach can
+be extended to any system where candidate physical laws are available but the
+form that governs the measured response is unknown.
 
 ## Layout
 
@@ -101,6 +104,8 @@ exact replay, at a large cost in wall time.
 | `data/raw/HEA CoCrCuFeNi 696 data.xlsx` | the same corpus, one sheet per temperature, as the baselines read it |
 | `data/experimental/MPEA_figshare_dataset.csv` | the multi-principal-element alloy measurements behind the cross-source folds |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
+| `data/supplementary/Supplementary_Data_1_MD_corpus.xlsx` | the training corpus as deposited with the paper |
+| `data/supplementary/Source_Data.xlsx` | source data for every figure and supplementary table |
 
 The molecular-dynamics trajectories and the LAMMPS input scripts that produced
 them are not part of this deposit. The corpus above is what the symbolic
