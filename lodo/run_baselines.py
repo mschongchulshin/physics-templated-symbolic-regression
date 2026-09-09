@@ -39,7 +39,8 @@ warnings.filterwarnings("ignore")
 import importlib.util
 _spec = importlib.util.spec_from_file_location(
     "lodo_baselines",
-    "baselines/lodo_comparison/run.py",
+    str(Path(__file__).resolve().parent.parent
+        / "baselines" / "lodo_comparison" / "run.py"),
 )
 _mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_mod)

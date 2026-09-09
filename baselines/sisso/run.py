@@ -69,8 +69,8 @@ from sklearn.preprocessing import StandardScaler
 warnings.filterwarnings("ignore")
 
 BASE = str(Path(__file__).resolve().parent.parent)
-DATA_FILE = f"{BASE}/HEA CoCrCuFeNi 696 data.xlsx"
-FEAT_FILE = f"{BASE}/sr_elemental_features/features_13feat_selected.csv"
+DATA_FILE = f"{BASE}/data/raw/HEA CoCrCuFeNi 696 data.xlsx"
+FEAT_FILE = f"{BASE}/data/features/features_13.csv"
 OUT_DIR = f"{BASE}/baselines/sisso"
 OUT_JSON = f"{OUT_DIR}/results.json"
 OUT_MD = f"{OUT_DIR}/summary.md"

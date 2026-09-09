@@ -22,7 +22,7 @@ BASE = str(Path(__file__).resolve().parent)
 OUT = f"{BASE}/lodo_v2"
 os.makedirs(OUT, exist_ok=True)
 
-MPEA = pd.read_csv(f"{BASE}/MPEA_figshare_dataset.csv")
+MPEA = pd.read_csv(f"{BASE}/data/experimental/MPEA_figshare_dataset.csv")
 
 # ---- Source mapping ----
 def map_source(rid):
@@ -71,7 +71,7 @@ PROP_COL = {
 }
 
 # ---- Reference compositions from existing lodo_all_results.xlsx ----
-ref = pd.read_excel(f"{BASE}/lodo_all_results.xlsx")
+ref = pd.read_excel(f"{BASE}/results/lodo_all_results.xlsx")
 COMPOSITIONS = sorted(ref["Composition"].unique())
 PROCESSINGS = ["CAST", "WROUGHT", "ANNEAL"]
 PROPERTIES = ["YS", "Elongation"]

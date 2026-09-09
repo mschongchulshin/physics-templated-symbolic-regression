@@ -30,7 +30,8 @@ mechanical and microstructural targets from molecular dynamics.
 ## Layout
 
 ```
-data/          the 684-point corpus, the 13 model inputs, the 232 compositions
+data/          the 684-point corpus, the 13 model inputs, the 232 compositions,
+               and the experimental measurements used for the cross-source folds
 equations/     all 660 discovered equations, sympy-parseable
 src/           the two-stage search, the nine templates, the ML and DL baselines
 baselines/     the published models re-trained on this corpus
@@ -61,7 +62,7 @@ Each command writes to `results/generated/`.
 | Figure | Command |
 |---|---|
 | Fig. 1c, 1d | `python src/run_sr_template.py && python src/compile_results.py` |
-| Fig. 1c baselines | `python baselines/lodo_comparison_run.py` |
+| Fig. 1c baselines | `python baselines/lodo_comparison/run.py` |
 | Fig. 3 | `python lodo/build_folds.py && python lodo/run_ptsr.py && python lodo/run_baselines.py` |
 | Fig. 4 | `python inverse_design/run_inverse_design.py` |
 | Fig. 4d | `python inverse_design/analysis_roc_interaction.py` |
@@ -75,6 +76,20 @@ The full symbolic-regression sweep is 2,700 runs and takes days on a laptop.
 `src/compile_results.py` reads it, so the published numbers can be checked
 without rerunning the search.
 
+## Reproducibility
+
+The cross-validation numbers, the equations and every table in the paper come
+from the files deposited under `results/` and `equations/`, and rerunning the
+compile step reproduces them exactly.
+
+Rerunning the symbolic search itself is a different matter. PySR is seeded
+(`random_state=seed`) but runs with `deterministic=False` and `procs=1`, since
+its strict determinism mode requires single-threaded evolution. A rerun
+therefore recovers the same operator structure at the rate reported in the
+paper rather than byte-identical expressions. Set `procs=0,
+multithreading=False, deterministic=True` in `src/run_sr_template.py` for an
+exact replay, at a large cost in wall time.
+
 ## Data
 
 | File | What it holds |
@@ -83,6 +98,8 @@ without rerunning the search.
 | `data/features/features_13.csv` | the thirteen model inputs |
 | `data/features/features_full.csv` | the 93-feature library before VIF reduction |
 | `data/compositions/compositions_228.csv` | the unique compositions |
+| `data/raw/HEA CoCrCuFeNi 696 data.xlsx` | the same corpus, one sheet per temperature, as the baselines read it |
+| `data/experimental/MPEA_figshare_dataset.csv` | the multi-principal-element alloy measurements behind the cross-source folds |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
 
 The molecular-dynamics trajectories and the LAMMPS input scripts that produced
@@ -90,6 +107,13 @@ them are not part of this deposit. The corpus above is what the symbolic
 regression consumes, and it is complete. Simulations used the Farkas-Caro EAM
 potential, available from
 <https://www.ctcms.nist.gov/potentials/entry/2018--Farkas-D-Caro-A--Fe-Ni-Cr-Co-Cu/>.
+
+## Third-party data
+
+`data/experimental/MPEA_figshare_dataset.csv` is redistributed from Borg et al.,
+*Scientific Data* **7**, 430 (2020), https://doi.org/10.1038/s41597-020-00768-9,
+unmodified. See `data/experimental/SOURCE.md`. Everything else in `data/` is
+ours.
 
 ## Citation
 

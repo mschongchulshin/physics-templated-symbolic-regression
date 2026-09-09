@@ -59,7 +59,7 @@ torch.set_num_threads(2)
 DEVICE = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
 BASE = str(Path(__file__).resolve().parent.parent)
-DATA_FILE = f"{BASE}/HEA CoCrCuFeNi 696 data.xlsx"
+DATA_FILE = f"{BASE}/data/raw/HEA CoCrCuFeNi 696 data.xlsx"
 OUT_DIR = Path(f"{BASE}/baselines/jain2026_dnn")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_JSON = OUT_DIR / "results.json"

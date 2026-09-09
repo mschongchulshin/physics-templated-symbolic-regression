@@ -14,7 +14,7 @@ OUT = Path(f"{BASE}/lodo_v2")
 
 
 def main():
-    old = pd.read_excel(f"{BASE}/lodo_all_results.xlsx")
+    old = pd.read_excel(f"{BASE}/results/lodo_all_results.xlsx")
     new = pd.read_csv(OUT / "folds.csv")
     new_ok = new[new["status"].str.startswith("ok")].copy()
 
