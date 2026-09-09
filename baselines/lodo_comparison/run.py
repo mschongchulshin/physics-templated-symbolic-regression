@@ -106,7 +106,7 @@ OUT_JSON = OUT_DIR / "results.json"
 OUT_SUMMARY = OUT_DIR / "summary.md"
 LOG_PATH = OUT_DIR / "run.log"
 
-MPEA_PATH = f"{BASE}/data/experimental/MPEA_figshare_dataset.csv"
+MPEA_PATH = f"{BASE}/data/LODO_experimental_dataset.csv"
 LODO_PATH = f"{BASE}/results/lodo_all_results.xlsx"
 
 SEEDS = [0, 1, 2, 3, 4]

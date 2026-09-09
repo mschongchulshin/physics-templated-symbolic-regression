@@ -23,8 +23,8 @@ OUTDIR.mkdir(parents=True, exist_ok=True)
 OUT_CSV = OUTDIR / f"lc_v3_w{WORKER_ID}.csv"
 EQ_JSON = BASE / "equations/all_equations_660.json"
 
-data = pd.read_csv(BASE / "data/raw/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
-feat = pd.read_csv(BASE / "data/features/features_13.csv")
+data = pd.read_csv(BASE / "data/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
+feat = pd.read_csv(BASE / "data/features_13.csv")
 
 CN = ["Co","Cr","Cu","Fe","Ni"]
 Xc = pd.DataFrame({n: data[f"{n}(%)"] for n in CN}, dtype=float)

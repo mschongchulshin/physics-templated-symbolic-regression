@@ -1,7 +1,6 @@
 <p align="center">
-  <img src="docs_banner.png" alt="Left, the PT-SR workflow. Right,
-  cross-validated accuracy on twelve targets against fitted model size for
-  ten methods." width="100%">
+  <img src="docs_banner.png" alt="Left, the PT-SR workflow. Right, the selected equation for each of the
+  twelve targets plotted over composition at 80, 300 and 1100 K." width="100%">
 </p>
 
 # Physics-Templated Symbolic Regression for High-Entropy Alloys
@@ -33,8 +32,8 @@ form that governs the measured response is unknown.
 ## Layout
 
 ```
-data/          the 684-point corpus, the 13 model inputs, the 232 compositions,
-               and the experimental measurements used for the cross-source folds
+data/          the corpus, the model inputs, and the experimental measurements
+               used for the cross-source folds
 equations/     all 660 discovered equations, sympy-parseable
 src/           the two-stage search, the nine templates, the ML and DL baselines
 baselines/     the published models re-trained on this corpus
@@ -97,15 +96,16 @@ exact replay, at a large cost in wall time.
 
 | File | What it holds |
 |---|---|
-| `data/raw/CoCrCuFeNi_684.csv` | 232 compositions x 3 temperatures, all measured targets |
-| `data/features/features_13.csv` | the thirteen model inputs |
-| `data/features/features_full.csv` | the 93-feature library before VIF reduction |
-| `data/compositions/compositions_228.csv` | the unique compositions |
-| `data/raw/HEA CoCrCuFeNi 696 data.xlsx` | the same corpus, one sheet per temperature, as the baselines read it |
-| `data/experimental/MPEA_figshare_dataset.csv` | the multi-principal-element alloy measurements behind the cross-source folds |
+| `data/CoCrCuFeNi_684.csv` | the training corpus, 228 compositions x 3 temperatures, all twelve targets |
+| `data/CoCrCuFeNi_684_by_temperature.xlsx` | the same corpus with one sheet per temperature, the form the baselines read |
+| `data/compositions_228.csv` | the unique compositions |
+| `data/features_13.csv` | the thirteen model inputs |
+| `data/features_93_library.csv` | the feature library before VIF reduction |
+| `data/features_vif50.csv` | what survived VIF < 50, before the two removed on physical grounds |
+| `data/LODO_experimental_dataset.csv` | the experimental alloy measurements behind the cross-source folds |
+| `data/Supplementary_Data_1_MD_corpus.xlsx` | the corpus as deposited with the paper |
+| `data/Source_Data.xlsx` | source data for every figure and supplementary table |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
-| `data/supplementary/Supplementary_Data_1_MD_corpus.xlsx` | the training corpus as deposited with the paper |
-| `data/supplementary/Source_Data.xlsx` | source data for every figure and supplementary table |
 
 The molecular-dynamics trajectories and the LAMMPS input scripts that produced
 them are not part of this deposit. The corpus above is what the symbolic
@@ -115,9 +115,9 @@ potential, available from
 
 ## Third-party data
 
-`data/experimental/MPEA_figshare_dataset.csv` is redistributed from Borg et al.,
+`data/LODO_experimental_dataset.csv` is redistributed from Borg et al.,
 *Scientific Data* **7**, 430 (2020), https://doi.org/10.1038/s41597-020-00768-9,
-unmodified. See `data/experimental/SOURCE.md`. Everything else in `data/` is
+unmodified. See `data/LODO_experimental_dataset_SOURCE.md`. Everything else in `data/` is
 ours.
 
 ## Citation
@@ -160,5 +160,5 @@ Code is MIT, see [LICENSE](LICENSE).
 Data and equations we generated, everything under `data/raw`,
 `data/features`, `data/compositions`, `equations/` and `results/`, are released
 under CC BY 4.0. The one exception is
-`data/experimental/MPEA_figshare_dataset.csv`, which is third-party and carries
-its own terms, recorded in `data/experimental/SOURCE.md`.
+`data/LODO_experimental_dataset.csv`, which is third-party and carries
+its own terms, recorded in `data/LODO_experimental_dataset_SOURCE.md`.

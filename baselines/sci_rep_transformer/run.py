@@ -49,8 +49,8 @@ warnings.filterwarnings("ignore")
 torch.set_num_threads(2)
 
 BASE = str(Path(__file__).resolve().parent.parent)
-DATA_FILE = f"{BASE}/data/raw/HEA CoCrCuFeNi 696 data.xlsx"
-FEAT_FILE = f"{BASE}/data/features/features_13.csv"
+DATA_FILE = f"{BASE}/data/CoCrCuFeNi_684_by_temperature.xlsx"
+FEAT_FILE = f"{BASE}/data/features_13.csv"
 OUT_DIR = f"{BASE}/baselines/sci_rep_transformer"
 OUT_JSON = f"{OUT_DIR}/results.json"
 OUT_MD = f"{OUT_DIR}/summary.md"

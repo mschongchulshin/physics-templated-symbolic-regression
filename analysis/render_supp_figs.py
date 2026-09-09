@@ -15,11 +15,11 @@ BASE = Path(__file__).resolve().parent.parent
 OUTDIR = BASE / "results" / "generated"
 OUTDIR.mkdir(parents=True, exist_ok=True)
 OUT = OUTDIR / "supp"; OUT.mkdir(exist_ok=True)
-BASE_FEAT = BASE / "data" / "features"
+BASE_FEAT = BASE / "data"
 
 # ── S1a: full 93-feature correlation heatmap ─────────────────────────────────
 print("S1a...", flush=True)
-df_full = pd.read_csv(BASE_FEAT / "features_full.csv")
+df_full = pd.read_csv(BASE_FEAT / "features_93_library.csv")
 corr_full = df_full.corr(method="pearson")
 
 n = corr_full.shape[0]
@@ -43,7 +43,7 @@ print(f"  S1a done. shape={corr_full.shape}", flush=True)
 
 # ── S1b: VIF>50 selected 10-feature correlation matrix ───────────────────────
 print("S1b...", flush=True)
-df_vif50 = pd.read_csv(BASE_FEAT / "features_vif50_selected.csv")
+df_vif50 = pd.read_csv(BASE_FEAT / "features_vif50.csv")
 corr_vif = df_vif50.corr(method="pearson")
 
 n2 = corr_vif.shape[0]

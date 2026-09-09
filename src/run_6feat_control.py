@@ -30,7 +30,7 @@ TMP_DIR = REPO / "tmp"
 os.makedirs(EQ_DIR, exist_ok=True)
 os.makedirs(RES_DIR, exist_ok=True)
 
-data = pd.read_csv(REPO / "data/raw/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
+data = pd.read_csv(REPO / "data/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
 
 CN = ["Co","Cr","Cu","Fe","Ni"]
 Xc = pd.DataFrame({n: data[f"{n}(%)"] for n in CN}, dtype=np.float64)

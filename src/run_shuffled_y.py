@@ -25,14 +25,14 @@ def cancel_watchdog():
     if _watchdog_timer: _watchdog_timer.cancel(); _watchdog_timer = None
 
 REPO = Path(__file__).resolve().parent.parent
-data = pd.read_csv(REPO / "data/raw/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
+data = pd.read_csv(REPO / "data/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
 data["comp_id"] = (data["Co(%)"].astype(str)+"_"+data["Cr(%)"].astype(str)+"_"+data["Cu(%)"].astype(str)+"_"+data["Fe(%)"].astype(str)+"_"+data["Ni(%)"].astype(str))
 groups = data["comp_id"].values
 Ta = data["T"].values.astype(np.float64)
 
 CN = ["Co","Cr","Cu","Fe","Ni"]
 Xc = pd.DataFrame({n: data[f"{n}(%)"] for n in CN}, dtype=np.float64)
-feat_df = pd.read_csv(REPO / "data/features/features_13.csv")
+feat_df = pd.read_csv(REPO / "data/features_13.csv")
 X_full = pd.concat([Xc, feat_df], axis=1)
 X_full = X_full.loc[:, ~X_full.columns.duplicated()]
 

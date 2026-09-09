@@ -35,7 +35,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # fitted stage-1 models, written by src/run_sr_template.py
 RESULTS_DIR = str(ROOT / "results" / "sr_results_full")
 INVERSE_DIR = str(ROOT / "results" / "generated" / "inverse_design")
-DATA_FILE = str(ROOT / "data" / "raw" / "HEA CoCrCuFeNi 696 data.xlsx")
+DATA_FILE = str(ROOT / "data" / "CoCrCuFeNi_684_by_temperature.xlsx")
 TEMPS = {"80K": 80, "300K": 300, "1100K": 1100}
 os.makedirs(INVERSE_DIR, exist_ok=True)
 

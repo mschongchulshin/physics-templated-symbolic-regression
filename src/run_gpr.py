@@ -15,11 +15,11 @@ import json, os
 REPO  = Path(__file__).resolve().parent.parent
 SEEDS = [0, 1, 2, 3, 4]
 
-data = pd.read_csv(REPO / "data/raw/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
+data = pd.read_csv(REPO / "data/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
 
 CN = ["Co", "Cr", "Cu", "Fe", "Ni"]
 Xc = pd.DataFrame({n: data[f"{n}(%)"] for n in CN}, dtype=np.float64)
-feat_df = pd.read_csv(REPO / "data/features/features_13.csv")
+feat_df = pd.read_csv(REPO / "data/features_13.csv")
 X = pd.concat([Xc, feat_df], axis=1)
 X = X.loc[:, ~X.columns.duplicated()]
 print(f"Features ({X.shape[1]}): {list(X.columns)}")

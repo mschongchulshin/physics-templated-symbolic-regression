@@ -30,12 +30,12 @@ RES_DIR = REPO / "results"
 TMP_DIR = REPO / "tmp"
 os.makedirs(RES_DIR, exist_ok=True)
 
-data = pd.read_csv(REPO / "data/raw/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
+data = pd.read_csv(REPO / "data/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
 Ta   = data["T"].values.astype(np.float64)
 
 CN = ["Co","Cr","Cu","Fe","Ni"]
 Xc = pd.DataFrame({n: data[f"{n}(%)"] for n in CN}, dtype=np.float64)
-feat_df = pd.read_csv(REPO / "data/features/features_13.csv")
+feat_df = pd.read_csv(REPO / "data/features_13.csv")
 X_full = pd.concat([Xc, feat_df], axis=1)
 X_full = X_full.loc[:, ~X_full.columns.duplicated()]
 print(f"Features ({X_full.shape[1]}): {list(X_full.columns)}")

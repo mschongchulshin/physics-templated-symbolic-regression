@@ -25,11 +25,11 @@ OPT_FILE  = REPO / "results" / "dl_optuna_results.json"
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 print(f"Device: {device}")
 
-data = pd.read_csv(REPO / "data/raw/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
+data = pd.read_csv(REPO / "data/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
 
 CN = ["Co","Cr","Cu","Fe","Ni"]
 Xc = pd.DataFrame({n: data[f"{n}(%)"] for n in CN}, dtype=np.float64)
-feat_df = pd.read_csv(REPO / "data/features/features_13.csv")
+feat_df = pd.read_csv(REPO / "data/features_13.csv")
 X = pd.concat([Xc, feat_df], axis=1)
 X = X.loc[:, ~X.columns.duplicated()]
 n_features = X.shape[1]

@@ -22,7 +22,7 @@ BASE = str(Path(__file__).resolve().parent)
 OUT = f"{BASE}/lodo_v2"
 os.makedirs(OUT, exist_ok=True)
 
-MPEA = pd.read_csv(f"{BASE}/data/experimental/MPEA_figshare_dataset.csv")
+MPEA = pd.read_csv(f"{BASE}/data/LODO_experimental_dataset.csv")
 
 # ---- Source mapping ----
 def map_source(rid):

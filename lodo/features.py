@@ -129,7 +129,7 @@ def load_mpea():
         df = pd.read_csv(cache)
         return df
     # fallback
-    df = pd.read_csv(f"{BASE}/data/experimental/MPEA_figshare_dataset.csv")
+    df = pd.read_csv(f"{BASE}/data/LODO_experimental_dataset.csv")
     df["_parsed"] = df["FORMULA"].apply(parse_formula)
     df["_elem_set"] = df["_parsed"].apply(
         lambda p: "".join(sorted(p.keys())) if p else None

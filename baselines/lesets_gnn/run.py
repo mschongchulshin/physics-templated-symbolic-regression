@@ -71,8 +71,7 @@ DEVICE = torch.device("cpu")
 
 
 # ---- Paths ------------------------------------------------------------------
-DATA_FILE = str(Path(__file__).resolve().parent.parent / "data" / "raw"
-                / "HEA CoCrCuFeNi 696 data.xlsx")
+DATA_FILE = str(Path(__file__).resolve().parent.parent / "data" / "CoCrCuFeNi_684_by_temperature.xlsx")
 OUT_DIR = str(Path(__file__).resolve().parent.parent / "results" / "generated" / "lesets_gnn")
 RESULTS_PATH = os.path.join(OUT_DIR, "results.json")
 SUMMARY_PATH = os.path.join(OUT_DIR, "summary.md")

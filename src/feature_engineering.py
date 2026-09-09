@@ -19,7 +19,7 @@ COMP_COLS = ["Co(%)", "Cr(%)", "Cu(%)", "Fe(%)", "Ni(%)"]
 SHEET_TEMP = {"80K": 80, "300K": 300, "1100K": 1100}
 
 REPO     = Path(__file__).resolve().parent.parent
-DATA_PATH = REPO / "data/raw/HEA CoCrCuFeNi 696 data.xlsx"
+DATA_PATH = REPO / "data/CoCrCuFeNi_684_by_temperature.xlsx"
 OUT_DIR   = REPO / "data/features"
 
 # Properties to exclude (non-physical / index-like)
@@ -143,7 +143,7 @@ print(f"Total features: {features_full.shape[1]}")
 print(f"Feature matrix shape: {features_full.shape}")
 
 # Save full features
-full_path = os.path.join(OUT_DIR, "features_full.csv")
+full_path = os.path.join(OUT_DIR, "features_93_library.csv")
 features_full.to_csv(full_path, index=False)
 print(f"Saved full features to {full_path}")
 

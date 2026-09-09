@@ -7,7 +7,7 @@ Task 2: Feature interaction 2D contour (DeltaH_mix x VEC) for UTS / FCC at T=300
 
 Inputs
 ------
-- data/raw/CoCrCuFeNi_684.csv
+- data/CoCrCuFeNi_684.csv
 - data/raw/features_13.csv
 - equations/free_2stage_best_equations.xlsx
 
@@ -35,8 +35,8 @@ from sklearn.metrics import roc_curve, auc
 # Paths
 # ----------------------------------------------------------------------
 ROOT      = Path(__file__).resolve().parent.parent
-RAW_CSV   = str(ROOT / "data" / "raw" / "CoCrCuFeNi_684.csv")
-FEAT_CSV  = str(ROOT / "data" / "features" / "features_13.csv")
+RAW_CSV   = str(ROOT / "data" / "CoCrCuFeNi_684.csv")
+FEAT_CSV  = str(ROOT / "data" / "features_13.csv")
 EQ_XLSX   = str(ROOT / "equations" / "free_2stage_best_equations.xlsx")
 FIG_DIR   = str(ROOT / "results" / "generated" / "figures")
 DATA_DIR  = str(ROOT / "results" / "generated" / "inverse")
