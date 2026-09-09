@@ -32,6 +32,27 @@ Tree class:
   9. Wu gplearn+RFR (JMI)    -- gplearn SymbolicTransformer + RFR
   10. JMI Stacking           -- ERT + HistGBR + Lasso meta
 
+Sources for the methods implemented here:
+  Liu MLP, Liu RF     Liu, X. et al. Machine learning-based glass formation
+                      prediction, npj Comput. Mater. 10, 4 (2024).
+  Wu gplearn+RFR      Wu, Y. et al. J. Mater. Inf. 4, 21 (2024). Uses gplearn
+                      SymbolicTransformer (Stephens, T., gplearn 0.4.3,
+                      https://github.com/trevorstephens/gplearn, BSD-3-Clause).
+  JMI Stacking        J. Mater. Inf. 4 (2024), ExtraTrees + HistGradientBoosting
+                      + Lasso meta-learner.
+  PySR no-template    Cranmer, M. Interpretable machine learning for science
+                      with PySR and SymbolicRegression.jl, arXiv:2305.01582
+                      (2023). Apache-2.0.
+  SISSO               Ouyang, R. et al. Phys. Rev. Materials 2, 083802 (2018).
+  SciRep25            Korkmaz, S. et al. Sci. Rep. 15 (2025),
+                      https://www.nature.com/articles/s41598-025-95170-z
+  Jain 2026 DNN       Proc. IMechE Part C, DOI 10.1177/09544062251414915
+  LESets GNN          Zhang et al. arXiv:2408.16337,
+                      https://github.com/Henrium/LESets
+
+All implementations here are our own, written from the published descriptions.
+No source code was copied from the repositories above.
+
 Features (uniform across all baselines, MPEA-compatible):
   - Element fractions for the composition system's elements (variable dim)
   - Hume-Rothery: S_mix, dH_mix (Miedema/Takeuchi-Inoue), delta, VEC, dChi

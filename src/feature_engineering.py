@@ -19,7 +19,7 @@ COMP_COLS = ["Co(%)", "Cr(%)", "Cu(%)", "Fe(%)", "Ni(%)"]
 SHEET_TEMP = {"80K": 80, "300K": 300, "1100K": 1100}
 
 REPO     = Path(__file__).resolve().parent.parent
-DATA_PATH = REPO / "data/raw/CoCrCuFeNi_684.csv"
+DATA_PATH = REPO / "data/raw/HEA CoCrCuFeNi 696 data.xlsx"
 OUT_DIR   = REPO / "data/features"
 
 # Properties to exclude (non-physical / index-like)

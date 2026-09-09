@@ -9,6 +9,9 @@ import matplotlib
 matplotlib.use("Agg")
 matplotlib.rcParams['svg.fonttype'] = 'none'
 import matplotlib.pyplot as plt
+BASE = Path(__file__).resolve().parent.parent
+OUTDIR = BASE / "results" / "generated"
+OUTDIR.mkdir(parents=True, exist_ok=True)
 from pathlib import Path
 
 OUT = OUTDIR / "sr_sens_out"
@@ -17,7 +20,7 @@ OUT.mkdir(exist_ok=True)
 # ── Merge all worker CSVs ─────────────────────────────────────────────────────
 dfs = []
 for i in range(5):
-    p = OUTDIR / "sr_sens_w{i}.csv"
+    p = OUTDIR / f"sr_sens_w{i}.csv"
     if p.exists():
         dfs.append(pd.read_csv(p))
 df = pd.concat(dfs, ignore_index=True)

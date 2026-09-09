@@ -10,9 +10,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 
-OUT = OUTDIR / "supp"; OUT.mkdir(exist_ok=True)
 
 BASE = Path(__file__).resolve().parent.parent
+OUTDIR = BASE / "results" / "generated"
+OUTDIR.mkdir(parents=True, exist_ok=True)
+OUT = OUTDIR / "supp"; OUT.mkdir(exist_ok=True)
 BASE_FEAT = BASE / "data" / "features"
 
 # ── S1a: full 93-feature correlation heatmap ─────────────────────────────────

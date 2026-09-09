@@ -12,11 +12,11 @@ from pysr import PySRRegressor
 
 WORKER_ID = int(sys.argv[1])
 N_WORKERS = int(sys.argv[2])
-OUT_CSV = OUTDIR / "sr_sens_w{WORKER_ID}.csv"
 
 BASE = Path(__file__).resolve().parent.parent
 OUTDIR = BASE / "results" / "generated"
 OUTDIR.mkdir(parents=True, exist_ok=True)
+OUT_CSV = OUTDIR / f"sr_sens_w{WORKER_ID}.csv"
 EQ_JSON = BASE / "equations/all_equations_660.json"
 
 data = pd.read_csv(BASE / "data/raw/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})

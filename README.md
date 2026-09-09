@@ -121,4 +121,10 @@ Add once the DOI is issued.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Code is MIT, see [LICENSE](LICENSE).
+
+Data and equations we generated, everything under `data/raw`,
+`data/features`, `data/compositions`, `equations/` and `results/`, are released
+under CC BY 4.0. The one exception is
+`data/experimental/MPEA_figshare_dataset.csv`, which is third-party and carries
+its own terms, recorded in `data/experimental/SOURCE.md`.
