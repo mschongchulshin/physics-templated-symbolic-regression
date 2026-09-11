@@ -127,8 +127,7 @@ ours.
 
 ## Citation
 
-Cite the paper and, separately, the archived release of this code. Both DOIs go
-in once they are issued.
+Cite the paper and, separately, the archived release of this code.
 
 ```bibtex
 @article{ptsr2026,
@@ -137,8 +136,7 @@ in once they are issued.
   author  = {Shin, Hongchul and Moon, Chanhyuk and Jo, Hyeonjin and
              Hwang, Kwang Yeon and Cheong, Jun Young and Jang, Hyo-Sun and
              Yoon, Taeyoung},
-  year    = {2026},
-  doi     = {}
+  year    = {2026}
 }
 
 @software{ptsr_code,
@@ -146,24 +144,15 @@ in once they are issued.
   author    = {Shin, Hongchul and Moon, Chanhyuk and Jo, Hyeonjin and
                Hwang, Kwang Yeon and Cheong, Jun Young and Jang, Hyo-Sun and
                Yoon, Taeyoung},
-  publisher = {Zenodo},
-  doi       = {}
+  year      = {2026}
 }
 ```
-
-Archiving a release: enable this repository in
-[Zenodo's GitHub settings](https://zenodo.org/account/settings/github/), then
-publish a GitHub release. Zenodo mints a DOI for that tag and reads the author
-list, licence and keywords from `.zenodo.json` in this directory. Each later
-release gets its own DOI, plus a concept DOI that always resolves to the newest
-one; cite the version-specific DOI in the paper.
 
 ## License
 
 Code is MIT, see [LICENSE](LICENSE).
 
-Data and equations we generated, everything under `data/raw`,
-`data/features`, `data/compositions`, `equations/` and `results/`, are released
-under CC BY 4.0. The one exception is
-`data/LODO_experimental_dataset.csv`, which is third-party and carries
-its own terms, recorded in `data/LODO_experimental_dataset_SOURCE.md`.
+The data and equations we generated, everything under `data/`, `equations/`
+and `results/`, are released under CC BY 4.0. The one exception is
+`data/LODO_experimental_dataset.csv`, which is third-party and carries its own
+terms, recorded in `data/LODO_experimental_dataset_SOURCE.md`.
