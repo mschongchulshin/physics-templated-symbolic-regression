@@ -42,8 +42,8 @@ src/           the two-stage search, the nine templates, the ML and DL baselines
 baselines/     the published models re-trained on this corpus
 lodo/          leave-one-dataset-out over six cross-source folds
 inverse_design/  optimisation of the closed forms and the screening benchmark
-analysis/      SHAP attribution, hyperparameter sweeps, learning curves,
-               supplementary figures
+analysis/      SHAP attribution, the equivalence tests, hyperparameter sweeps,
+               learning curves, supplementary figures
 results/       cross-validation results and the selected hyperparameters
 ```
 
@@ -70,6 +70,7 @@ Unless noted, each command writes under `results/`.
 | Fig. 2a, 2b | `python src/run_sr_template.py 0 5 && python src/compile_results.py` |
 | Fig. 3 | the same run, which writes the elected equation per target to `equations/` |
 | Fig. 4 | `python analysis/shap_attribution.py && python analysis/shap_beeswarm.py` |
+| Supp. Note 3 | `python analysis/equivalence_tost.py` |
 | Fig. 5 | `python lodo/build_folds.py && python lodo/run_ptsr.py && python lodo/run_baselines.py` |
 | Fig. 6a-h | `python inverse_design/run_inverse_design.py` |
 | Fig. 6i | `python inverse_design/analysis_roc_interaction.py` |
@@ -86,8 +87,11 @@ and `src/compile_results.py` reads them to reproduce every published number.
 Values quoted in the paper are rounded from these files. The test R2 of 0.994
 for UTS, for example, is the mean of the 25 cross-validation runs of the
 elected Arrhenius template in `results/cv_results/sr_9templates_raw.csv`,
-which comes to 0.9936. The equivalence tests behind the seven-of-twelve claim
-are tabulated in `data/Source_Data.xlsx`, sheet `Supp_Note_3_TOST`.
+which comes to 0.9936. The equivalence tests are tabulated in `data/Source_Data.xlsx`, sheet
+`Supp_Note_3_TOST`, and `analysis/equivalence_tost.py` recomputes them from
+the deposited runs. It picks the same comparator on all twelve targets and
+the same verdict on eleven; the header of that script records where the
+deposited numbers and the recomputed ones part company.
 
 Rerunning the search itself is a different matter. PySR is seeded
 (`random_state=seed`) but runs with `deterministic=False` and `procs=1`, since
