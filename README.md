@@ -76,12 +76,18 @@ Unless noted, each command writes under `results/`.
 | Supp. Figs. 1, 2 | `python analysis/render_supp_figs.py` |
 | Supp. Figs. 3-5 | `python analysis/sr_sensitivity_worker.py <worker_id> <n_workers>` then `python analysis/sr_sensitivity_plot.py` |
 | Supp. Figs. 6, 7 | `python analysis/optuna_convergence.py` |
-| Supp. Fig. 8 | `python src/run_shuffled_y.py` |
+| Supp. Fig. 8 | `python src/run_shuffled_y.py 0 5` |
 
 The full symbolic-regression sweep is 2,700 runs and takes days on a laptop.
 It does not have to be rerun to check the paper: the finished sweep is in
 `results/cv_results/sr_9templates_raw.csv`, the equations are in `equations/`,
 and `src/compile_results.py` reads them to reproduce every published number.
+
+Values quoted in the paper are rounded from these files. The test R2 of 0.994
+for UTS, for example, is the mean of the 25 cross-validation runs of the
+elected Arrhenius template in `results/cv_results/sr_9templates_raw.csv`,
+which comes to 0.9936. The equivalence tests behind the seven-of-twelve claim
+are tabulated in `data/Source_Data.xlsx`, sheet `Supp_Note_3_TOST`.
 
 Rerunning the search itself is a different matter. PySR is seeded
 (`random_state=seed`) but runs with `deterministic=False` and `procs=1`, since

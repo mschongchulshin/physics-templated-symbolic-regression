@@ -1,7 +1,11 @@
-"""
-9-template SR — full-data fit (no CV), 5 seeds
-Saves structured JSON + pkl per run
-Usage: python3 run_9templates_fullfit.py <seed_start> <seed_end>
+"""Nine-template symbolic regression over the twelve targets.
+
+Stage 1 fits a composition function at 300 K; stage 2 fits a temperature
+function to the residual ratios under each template in turn, and BIC elects one.
+Writes the discovered equations to equations/ and the fitted models to
+results/sr_models/.
+
+Usage: python3 src/run_sr_template.py <seed_start> <seed_end> [template]
 """
 import pandas as pd, numpy as np, json, os, time, threading, sys, pickle
 from pathlib import Path

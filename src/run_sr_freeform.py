@@ -1,6 +1,6 @@
 """
 Free-form SR — full-data fit (no CV), 13 features, 5 seeds
-Usage: python3 run_freeform_fullfit.py <seed_start> <seed_end>
+Usage: python3 src/run_sr_freeform.py <seed_start> <seed_end>
 Saves: equations/freeform_13feat/{target}_seed{N}.json + sr_models/
 """
 import pandas as pd, numpy as np, json, os, time, threading, sys, pickle

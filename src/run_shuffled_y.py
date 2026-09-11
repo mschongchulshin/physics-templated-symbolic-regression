@@ -1,6 +1,6 @@
 """
 Shuffled-y permutation test with 13-feature set
-Usage: python3 run_shuffled_13feat.py <seed_start> <seed_end>
+Usage: python3 src/run_shuffled_y.py <seed_start> <seed_end>
 seed=0: shuffle seed. Runs all 9 templates × 12 targets × 5 folds × N seeds
 """
 import pandas as pd, numpy as np, json, os, time, threading, sys
