@@ -80,17 +80,11 @@ Each command writes to `results/generated/`.
 | Supp. Fig. 8 | `python src/run_shuffled_y.py` |
 
 The full symbolic-regression sweep is 2,700 runs and takes days on a laptop.
-`results/cv_results/sr_9templates_raw.csv` holds the finished sweep, and
-`src/compile_results.py` reads it, so the published numbers can be checked
-without rerunning the search.
+It does not have to be rerun to check the paper: the finished sweep is in
+`results/cv_results/sr_9templates_raw.csv`, the equations are in `equations/`,
+and `src/compile_results.py` reads them to reproduce every published number.
 
-## Reproducibility
-
-The cross-validation numbers, the equations and every table in the paper come
-from the files deposited under `results/` and `equations/`, and rerunning the
-compile step reproduces them exactly.
-
-Rerunning the symbolic search itself is a different matter. PySR is seeded
+Rerunning the search itself is a different matter. PySR is seeded
 (`random_state=seed`) but runs with `deterministic=False` and `procs=1`, since
 its strict determinism mode requires single-threaded evolution. A rerun
 therefore recovers the same operator structure at the rate reported in the
