@@ -89,9 +89,8 @@ for UTS, for example, is the mean of the 25 cross-validation runs of the
 elected Arrhenius template in `results/cv_results/sr_9templates_raw.csv`,
 which comes to 0.9936. The equivalence tests are tabulated in `data/Source_Data.xlsx`, sheet
 `Supp_Note_3_TOST`, and `analysis/equivalence_tost.py` recomputes them from
-the deposited runs. It picks the same comparator on all twelve targets and
-the same verdict on eleven; the header of that script records where the
-deposited numbers and the recomputed ones part company.
+the deposited runs, reproducing all twelve comparators, p values and
+verdicts.
 
 Rerunning the search itself is a different matter. PySR is seeded
 (`random_state=seed`) but runs with `deterministic=False` and `procs=1`, since
@@ -113,6 +112,7 @@ exact replay, at a large cost in wall time.
 | `data/LODO_experimental_dataset.csv` | the experimental measurements the cross-source folds are cut from. Source Data holds the fold results, not the underlying table |
 | `data/Supplementary_Data_1_MD_corpus.xlsx` | the training corpus as submitted with the paper |
 | `data/Source_Data.xlsx` | the numbers behind every figure panel and supplementary table |
+| `results/cv_results/ptsr_best5_seeds.csv` | the five best-scoring seeds per target out of thirty, which the equivalence test compares |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
 
 The molecular-dynamics trajectories and the LAMMPS input scripts that produced

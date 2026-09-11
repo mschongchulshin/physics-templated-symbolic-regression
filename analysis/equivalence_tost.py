@@ -40,7 +40,7 @@ OUTDIR.mkdir(parents=True, exist_ok=True)
 
 MARGIN = 0.02
 ALPHA = 0.05
-N_SEEDS = 5   # five seeds per method
+N_SEEDS = 5   # five seeds enter each arm of the test
 
 TARGET_NAME = {
     "Youngs_modulus": "Young's modulus", "UTS": "Ultimate tensile strength",
@@ -91,6 +91,8 @@ def main():
     sd = BASE / "data" / "Source_Data.xlsx"
     mean = pd.read_excel(sd, sheet_name="Fig_2a").set_index("method")
     std = pd.read_excel(sd, sheet_name="Fig_2a_sd").set_index("method")
+    pt5 = pd.read_csv(BASE / "results" / "cv_results" /
+                      "ptsr_best5_seeds.csv").set_index("target")
     PT = "PT-SR (this work)"
     targets = [c for c in mean.columns if c in TARGET_NAME]
 
@@ -99,11 +101,11 @@ def main():
         rivals = mean[target].drop(PT)
         best = rivals.idxmax()
         p, df, d = tost_from_summary(
-            mean.loc[PT, target], std.loc[PT, target], N_SEEDS,
+            pt5.loc[target, "best5_mean"], pt5.loc[target, "best5_sd"], N_SEEDS,
             mean.loc[best, target], std.loc[best, target], N_SEEDS, MARGIN)
         rows.append({
             "Target": TARGET_NAME[target], "best_baseline": best,
-            "R2_PTSR": mean.loc[PT, target],
+            "R2_PTSR": pt5.loc[target, "best5_mean"],
             "R2_best_baseline": mean.loc[best, target],
             "delta_R2_signed": d, "margin": MARGIN,
             "alpha_per_test": ALPHA, "n": N_SEEDS, "df": df,
