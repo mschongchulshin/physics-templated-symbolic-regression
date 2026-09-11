@@ -19,8 +19,8 @@ import re
 import numpy as np
 import pandas as pd
 
-BASE = str(Path(__file__).resolve().parent)
-OUT = f"{BASE}/lodo_v2"
+BASE = str(Path(__file__).resolve().parent.parent)
+OUT = f"{BASE}/results/generated/lodo_v2"
 
 # ---- Element properties (Miedema) - copied from baselines/lodo_comparison/run.py ----
 ELEM_R = {

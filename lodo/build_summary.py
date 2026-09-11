@@ -25,8 +25,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-BASE = str(Path(__file__).resolve().parent)
-OUT = Path(f"{BASE}/lodo_v2")
+BASE = str(Path(__file__).resolve().parent.parent)
+OUT = Path(f"{BASE}/results/generated/lodo_v2")
 
 
 def main():

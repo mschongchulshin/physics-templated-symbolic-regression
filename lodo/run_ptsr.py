@@ -37,8 +37,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "lodo"))
 from features import load_mpea, build_fold
 from ptsr_templates import TEMPLATES, run_template_on_fold
 
-BASE = str(Path(__file__).resolve().parent)
-OUT = Path(f"{BASE}/lodo_v2")
+BASE = str(Path(__file__).resolve().parent.parent)
+OUT = Path(f"{BASE}/results/generated/lodo_v2")
 OUT.mkdir(exist_ok=True)
 
 CSV_OUT = OUT / "pt_sr_results.csv"

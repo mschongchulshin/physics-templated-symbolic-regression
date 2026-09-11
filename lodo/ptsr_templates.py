@@ -40,8 +40,8 @@ warnings.filterwarnings("ignore")
 from sklearn.metrics import r2_score, mean_absolute_error
 from pysr import PySRRegressor
 
-BASE = str(Path(__file__).resolve().parent)
-OUT = f"{BASE}/lodo_v2"
+BASE = str(Path(__file__).resolve().parent.parent)
+OUT = f"{BASE}/results/generated/lodo_v2"
 TEMPDIR_ROOT = f"{OUT}/_pysr_tmp"
 os.makedirs(TEMPDIR_ROOT, exist_ok=True)
 

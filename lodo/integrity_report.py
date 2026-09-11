@@ -9,8 +9,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-BASE = str(Path(__file__).resolve().parent)
-OUT = Path(f"{BASE}/lodo_v2")
+BASE = str(Path(__file__).resolve().parent.parent)
+OUT = Path(f"{BASE}/results/generated/lodo_v2")
 
 
 def main():

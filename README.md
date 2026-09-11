@@ -63,13 +63,12 @@ import pysr; pysr.install()
 
 ## Reproducing the figures
 
-Each command writes to `results/generated/`.
+Unless noted, each command writes under `results/`.
 
 | Figure | Command |
 |---|---|
-| Fig. 2a, 2b | `python src/run_sr_template.py && python src/compile_results.py` |
-| Fig. 2 baselines | `python baselines/lodo_comparison/run.py` |
-| Fig. 3 | `python src/run_sr_template.py`, which writes the elected equation per target |
+| Fig. 2a, 2b | `python src/run_sr_template.py 0 5 && python src/compile_results.py` |
+| Fig. 3 | the same run, which writes the elected equation per target to `equations/` |
 | Fig. 4 | `python analysis/shap_attribution.py && python analysis/shap_beeswarm.py` |
 | Fig. 5 | `python lodo/build_folds.py && python lodo/run_ptsr.py && python lodo/run_baselines.py` |
 | Fig. 6a-h | `python inverse_design/run_inverse_design.py` |
@@ -116,8 +115,9 @@ potential, available from
 
 `data/LODO_experimental_dataset.csv` is redistributed from Borg et al.,
 *Scientific Data* **7**, 430 (2020), https://doi.org/10.1038/s41597-020-00768-9,
-unmodified. See `data/LODO_experimental_dataset_SOURCE.md`. Everything else in `data/` is
-ours.
+unmodified and under its CC BY 4.0 licence, with the credit that licence
+requires. See `data/LODO_experimental_dataset_SOURCE.md`. Everything else in
+`data/` is ours.
 
 ## Citation
 

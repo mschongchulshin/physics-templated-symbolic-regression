@@ -18,8 +18,8 @@ import json
 import numpy as np
 import pandas as pd
 
-BASE = str(Path(__file__).resolve().parent)
-OUT = f"{BASE}/lodo_v2"
+BASE = str(Path(__file__).resolve().parent.parent)
+OUT = f"{BASE}/results/generated/lodo_v2"
 os.makedirs(OUT, exist_ok=True)
 
 MPEA = pd.read_csv(f"{BASE}/data/LODO_experimental_dataset.csv")
@@ -70,9 +70,17 @@ PROP_COL = {
     "Elongation": "PROPERTY: Elongation (%)",
 }
 
-# ---- Reference compositions from existing lodo_all_results.xlsx ----
-ref = pd.read_excel(f"{BASE}/results/lodo_all_results.xlsx")
-COMPOSITIONS = sorted(ref["Composition"].unique())
+# the multi-principal-element families scanned for evaluable folds
+COMPOSITIONS = [
+    "AlCoCrCuFeNi", "AlCoCrFeMnNi", "AlCoCrFeMoNi", "AlCoCrFeNi",
+    "AlCoCrFeNiTi", "AlCoCuFeNi", "AlCrFeMnNi", "AlCrFeMoNiTi", "AlCrFeNi",
+    "AlCrMoNbTi", "AlCrNbTiV", "AlHfNbTaTiZr", "AlLiMgSi", "AlNbTiVZr",
+    "CoCrCuFeNiV", "CoCrFeMnMoNi", "CoCrFeMnNi", "CoCrFeMnNiV",
+    "CoCrFeMoNi", "CoCrFeNbNi", "CoCrFeNi", "CoCrNi", "CoCuFeNbNi",
+    "CrFeNiTi", "HfMoNbSiTiV", "HfMoNbSiTiZr", "HfMoNbTaTiZr", "HfMoNbTiZr",
+    "HfNbSiTiVZr", "HfNbTaTiZr", "HfNbTiVZr", "HfNbTiZr", "MoNbReTaW",
+    "MoNbTaTiW", "MoNbTaVW", "MoNbTaW", "MoNbTiVZr", "NbTiVZr", "NbTiZr",
+]
 PROCESSINGS = ["CAST", "WROUGHT", "ANNEAL"]
 PROPERTIES = ["YS", "Elongation"]
 
@@ -194,31 +202,4 @@ print(f"\nValid (ok / ok_constant_y): {(folds['status'].str.startswith('ok')).su
 print(f"With overlap: {folds['has_overlap'].sum()}")
 print(f"With constant y_test: {folds['y_test_constant'].sum()}")
 
-# ---- Cross-check vs old lodo_all_results.xlsx ----
-print("\n=== Comparison vs old lodo_all_results.xlsx ===")
-old = ref[["Composition", "Processing", "Property", "Test_Dataset", "n_train", "n_test"]].copy()
-old["test_source"] = (
-    old["Test_Dataset"]
-    .str.replace("_CAST", "", regex=False)
-    .str.replace("_WROUGHT", "", regex=False)
-    .str.replace("_ANNEAL", "", regex=False)
-)
-old.columns = ["composition", "processing", "property", "Test_Dataset",
-               "old_n_train", "old_n_test", "test_source"]
-joined = folds.merge(
-    old[["composition", "processing", "property", "test_source", "old_n_train", "old_n_test"]],
-    on=["composition", "processing", "property", "test_source"],
-    how="outer",
-    indicator=True,
-)
-diff_n = joined[(joined["n_train"] != joined["old_n_train"]) | (joined["n_test"] != joined["old_n_test"])]
-print(f"Folds where (n_train, n_test) differs from old: {len(diff_n)}")
-print(joined["_merge"].value_counts())
-diff_n.to_csv(f"{OUT}/folds_diff_vs_old.csv", index=False)
-print(f"Diff details -> {OUT}/folds_diff_vs_old.csv")
-
-# ---- Save MPEA preprocessed cache for downstream steps ----
-MPEA[["IDENTIFIER: Reference ID", "FORMULA", "PROPERTY: Processing method",
-       "PROPERTY: YS (MPa)", "PROPERTY: Elongation (%)",
-       "_source", "_T_K", "_elem_set"]].to_csv(f"{OUT}/mpea_preprocessed.csv", index=False)
 print(f"MPEA cache -> {OUT}/mpea_preprocessed.csv")

@@ -58,8 +58,8 @@ safe_metrics = _mod.safe_metrics
 
 from features import load_mpea, build_fold
 
-BASE = str(Path(__file__).resolve().parent)
-OUT = Path(f"{BASE}/lodo_v2")
+BASE = str(Path(__file__).resolve().parent.parent)
+OUT = Path(f"{BASE}/results/generated/lodo_v2")
 CSV_OUT = OUT / "baselines_results.csv"
 JSON_OUT = OUT / "baselines_results.json"
 LOG_OUT = OUT / "baselines_run.log"

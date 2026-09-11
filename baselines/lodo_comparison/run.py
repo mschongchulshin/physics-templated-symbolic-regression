@@ -1,7 +1,10 @@
 """
-LODO (Leave-One-Dataset-Out) baseline comparison vs PT-SR.
+Baseline fitters shared by the leave-one-dataset-out workflow.
 
-Applies the SAME R3 LODO protocol used to evaluate PT-SR (lodo_all_results.xlsx)
+This file defines one fit_predict_* function per published baseline.
+lodo/run_baselines.py imports them and drives the evaluation over the folds
+that lodo/build_folds.py cuts from the MPEA table.
+
 to all external SOTA baselines, on the MPEA experimental dataset
 (MPEA_figshare_dataset.csv).
 
@@ -19,7 +22,6 @@ Source) the paper R3 reports.
 Baselines (all in same script for unified protocol):
 
 Smooth class:
-  1. PT-SR (BIC-best)        -- already in lodo_all_results.xlsx (loaded directly)
   2. Liu MLP (npj 2024)      -- 3-layer MLP regressor
   3. PySR no-template        -- standard SR (free_1stage), seeds 0..4
   4. SciRep25 Transformer    -- per-feature token Transformer
@@ -99,15 +101,14 @@ warnings.filterwarnings("ignore")
 # ============================================================
 # Paths
 # ============================================================
-BASE = str(Path(__file__).resolve().parent)
-OUT_DIR = Path(f"{BASE}/baselines/lodo_comparison")
+BASE = str(Path(__file__).resolve().parent.parent.parent)
+OUT_DIR = Path(f"{BASE}/results/generated/lodo_comparison")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 OUT_JSON = OUT_DIR / "results.json"
 OUT_SUMMARY = OUT_DIR / "summary.md"
 LOG_PATH = OUT_DIR / "run.log"
 
 MPEA_PATH = f"{BASE}/data/LODO_experimental_dataset.csv"
-LODO_PATH = f"{BASE}/results/lodo_all_results.xlsx"
 
 SEEDS = [0, 1, 2, 3, 4]
 
@@ -271,14 +272,6 @@ PROP_COL = {
 log(f"MPEA rows: {len(df_mpea)}")
 log(f"Source counts: {df_mpea['_source'].value_counts().to_dict()}")
 log(f"Processing counts: {df_mpea['PROPERTY: Processing method'].value_counts().to_dict()}")
-
-# ============================================================
-# 3. Load LODO fold definitions (PT-SR baseline reference)
-# ============================================================
-log("Loading PT-SR LODO fold definitions")
-lodo_def = pd.read_excel(LODO_PATH)
-log(f"LODO fold definitions: {len(lodo_def)}")
-
 
 # ============================================================
 # 4. Per-fold feature builder
@@ -873,240 +866,3 @@ BASELINES = {
     "SISSO":           (fit_predict_sisso,              1,          False, "smooth"),
     "PySR_free_1stage": (fit_predict_pysr_free,         len(SEEDS), False, "smooth"),
 }
-
-
-# ============================================================
-# 7. PT-SR results loader (already evaluated)
-# ============================================================
-def load_ptsr_fold_results():
-    """Map each fold to PT-SR's reported R^2 from lodo_all_results.xlsx."""
-    out = {}
-    for _, row in lodo_def.iterrows():
-        fid = fold_id(row)
-        out[fid] = {
-            "R2": float(row["Best_Test_R2"]) if pd.notna(row["Best_Test_R2"]) else float("nan"),
-            "MAE": float("nan"),
-            "RMSE": float("nan"),
-            "Template": str(row["Best_Template"]),
-        }
-    return out
-
-
-# ============================================================
-# 8. Main loop
-# ============================================================
-def run_baseline_on_folds(name, fn, n_seeds, needs_elem_order):
-    fold_results = {}
-    folds = list(lodo_def.iterrows())
-    n_total = len(folds)
-    t0 = time.time()
-    for k, (_, row) in enumerate(folds, start=1):
-        fid = fold_id(row)
-        comp = row["Composition"]
-        proc = row["Processing"]
-        prop = row["Property"]
-        test_ds = row["Test_Dataset"]
-        test_source = (
-            test_ds.replace("_CAST", "").replace("_WROUGHT", "").replace("_ANNEAL", "")
-        )
-
-        data = build_fold_features(comp, proc, prop, test_source)
-        if data is None:
-            fold_results[fid] = {
-                "R2": float("nan"), "MAE": float("nan"), "RMSE": float("nan"),
-                "n_train": 0, "n_test": 0,
-                "skip_reason": "no usable data",
-            }
-            continue
-
-        per_seed = []
-        for seed in range(n_seeds):
-            try:
-                if needs_elem_order:
-                    pred = fn(data["X_train"], data["y_train"],
-                              data["X_test"], seed, data["elem_order"])
-                else:
-                    pred = fn(data["X_train"], data["y_train"],
-                              data["X_test"], seed)
-                m = safe_metrics(data["y_test"], pred)
-            except Exception as e:
-                log(f"    [{name}] fold {fid} seed {seed} FAIL: {e}",
-                    also_print=False)
-                m = {"R2": float("nan"), "MAE": float("nan"), "RMSE": float("nan")}
-            per_seed.append(m)
-
-        # Aggregate across seeds (median over seeds first)
-        r2s = [s["R2"] for s in per_seed if np.isfinite(s["R2"])]
-        maes = [s["MAE"] for s in per_seed if np.isfinite(s["MAE"])]
-        rmses = [s["RMSE"] for s in per_seed if np.isfinite(s["RMSE"])]
-        fold_results[fid] = {
-            "R2": float(np.median(r2s)) if r2s else float("nan"),
-            "R2_mean": float(np.mean(r2s)) if r2s else float("nan"),
-            "R2_std": float(np.std(r2s)) if r2s else float("nan"),
-            "MAE": float(np.median(maes)) if maes else float("nan"),
-            "RMSE": float(np.median(rmses)) if rmses else float("nan"),
-            "n_train": data["n_train"],
-            "n_test": data["n_test"],
-            "n_seeds_ok": len(r2s),
-            "single_source": data.get("single_source", False),
-        }
-
-        if k % 10 == 0 or k == n_total:
-            elapsed = time.time() - t0
-            log(f"  [{name}] {k}/{n_total} folds done ({elapsed/60:.1f} min)")
-
-    # Summary stats across folds (use median R^2 per fold)
-    r2_all = [v["R2"] for v in fold_results.values() if np.isfinite(v.get("R2", np.nan))]
-    summary = {
-        "n_folds_total": n_total,
-        "n_folds_evaluated": len(r2_all),
-        "median_R2": float(np.median(r2_all)) if r2_all else float("nan"),
-        "mean_R2": float(np.mean(r2_all)) if r2_all else float("nan"),
-        "std_R2": float(np.std(r2_all)) if r2_all else float("nan"),
-        "p25_R2": float(np.percentile(r2_all, 25)) if r2_all else float("nan"),
-        "p75_R2": float(np.percentile(r2_all, 75)) if r2_all else float("nan"),
-    }
-    return {"folds": fold_results, "summary": summary}
-
-
-def main():
-    log("=" * 60)
-    log("LODO baseline comparison starting")
-    log("=" * 60)
-
-    all_results = {}
-
-    # ---- PT-SR (load existing) ----
-    log("\n--- PT-SR (BIC-best, from lodo_all_results.xlsx) ---")
-    ptsr_folds = load_ptsr_fold_results()
-    r2_all = [v["R2"] for v in ptsr_folds.values() if np.isfinite(v["R2"])]
-    ptsr_summary = {
-        "n_folds_total": len(ptsr_folds),
-        "n_folds_evaluated": len(r2_all),
-        "median_R2": float(np.median(r2_all)),
-        "mean_R2": float(np.mean(r2_all)),
-        "std_R2": float(np.std(r2_all)),
-        "p25_R2": float(np.percentile(r2_all, 25)),
-        "p75_R2": float(np.percentile(r2_all, 75)),
-    }
-    all_results["PT_SR_BIC_best"] = {
-        "class": "smooth", "folds": ptsr_folds, "summary": ptsr_summary,
-    }
-    log(f"  PT-SR median R^2 (all 134 folds): {ptsr_summary['median_R2']:.4f}")
-    log(f"  PT-SR mean   R^2 (all 134 folds): {ptsr_summary['mean_R2']:.4f}")
-
-    # Save initial
-    with open(OUT_JSON, "w") as f:
-        json.dump(all_results, f, indent=2)
-
-    # ---- All other baselines ----
-    for name, (fn, n_seeds, needs_elem, cls) in BASELINES.items():
-        log(f"\n--- {name} (class={cls}, n_seeds={n_seeds}) ---")
-        t0 = time.time()
-        try:
-            res = run_baseline_on_folds(name, fn, n_seeds, needs_elem)
-            res["class"] = cls
-            res["n_seeds"] = n_seeds
-            all_results[name] = res
-            elapsed = (time.time() - t0) / 60.0
-            log(f"  {name} done in {elapsed:.1f} min — "
-                f"median R^2 = {res['summary']['median_R2']:.4f}")
-        except Exception as e:
-            log(f"  {name} FAILED: {e}")
-            all_results[name] = {
-                "class": cls, "error": str(e),
-                "summary": {"median_R2": float("nan")},
-            }
-        # Checkpoint after each baseline
-        with open(OUT_JSON, "w") as f:
-            json.dump(all_results, f, indent=2)
-
-    log("\n" + "=" * 60)
-    log("All baselines complete. Building summary.md")
-    log("=" * 60)
-
-    # ---- Build summary.md ----
-    write_summary(all_results)
-    log(f"Wrote {OUT_JSON}")
-    log(f"Wrote {OUT_SUMMARY}")
-
-
-def write_summary(all_results):
-    lines = [
-        "# LODO Cross-Dataset Generalization: Baselines vs PT-SR",
-        "",
-        "Protocol: 134 LODO folds (Composition x Processing x Property x Test_Dataset)",
-        "from `lodo_all_results.xlsx`.",
-        "Per fold: train on rows from sources != Test_Dataset's source, test on the held-out source.",
-        "Stochastic baselines: median across 5 seeds (0..4).",
-        "",
-        "## Overall summary (median R^2 across folds)",
-        "",
-        "| Baseline | Class | n_folds_eval | median R^2 | mean R^2 | std | p25 | p75 |",
-        "|---|---|---:|---:|---:|---:|---:|---:|",
-    ]
-    # Order: PT-SR first, then by class
-    order = ["PT_SR_BIC_best"] + [k for k in all_results if k != "PT_SR_BIC_best"]
-    for name in order:
-        r = all_results.get(name, {})
-        s = r.get("summary", {})
-        cls = r.get("class", "?")
-        lines.append(
-            f"| {name} | {cls} | {s.get('n_folds_evaluated', 0)} | "
-            f"{s.get('median_R2', float('nan')):.4f} | "
-            f"{s.get('mean_R2', float('nan')):.4f} | "
-            f"{s.get('std_R2', float('nan')):.4f} | "
-            f"{s.get('p25_R2', float('nan')):.4f} | "
-            f"{s.get('p75_R2', float('nan')):.4f} |"
-        )
-
-    # Sub-summaries for FCC CAST subset
-    lines += ["", "## FCC CAST subset (52 folds, no refractory)"]
-    fcc_elements = {"Fe", "Co", "Ni", "Cr", "Cu", "Mn", "Al", "Li", "Mg", "Si", "Ti"}
-    refractory = {"W", "Mo", "Nb", "Ta", "Hf", "Re"}
-
-    def is_fcc_cast(fid):
-        comp, proc, prop, _ = fid.split("|")
-        if proc != "CAST":
-            return False
-        elems = set(re.findall(r"[A-Z][a-z]?", comp))
-        # FCC-friendly: <=1 refractory element
-        return len(elems & refractory) == 0
-
-    lines += [
-        "",
-        "| Baseline | n | median R^2 | mean R^2 |",
-        "|---|---:|---:|---:|",
-    ]
-    for name in order:
-        r = all_results.get(name, {})
-        folds = r.get("folds", {})
-        r2s = [v.get("R2", float("nan")) for k, v in folds.items()
-               if is_fcc_cast(k) and np.isfinite(v.get("R2", float("nan")))]
-        if r2s:
-            lines.append(
-                f"| {name} | {len(r2s)} | {np.median(r2s):.4f} | {np.mean(r2s):.4f} |"
-            )
-        else:
-            lines.append(f"| {name} | 0 | nan | nan |")
-
-    # Per-fold table
-    lines += ["", "## Per-fold R^2 (all baselines x all 134 folds)", ""]
-    cols = ["Fold"] + order
-    lines.append("| " + " | ".join(cols) + " |")
-    lines.append("|" + "|".join(["---"] * len(cols)) + "|")
-    fold_ids = sorted(all_results["PT_SR_BIC_best"]["folds"].keys())
-    for fid in fold_ids:
-        cells = [fid]
-        for name in order:
-            r = all_results.get(name, {})
-            v = r.get("folds", {}).get(fid, {})
-            r2 = v.get("R2", float("nan"))
-            cells.append(f"{r2:.4f}" if np.isfinite(r2) else "—")
-        lines.append("| " + " | ".join(cells) + " |")
-
-    OUT_SUMMARY.write_text("\n".join(lines))
-
-
-if __name__ == "__main__":
-    main()

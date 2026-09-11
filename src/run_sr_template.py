@@ -28,6 +28,9 @@ REPO    = Path(__file__).resolve().parent.parent
 EQ_DIR  = REPO / "equations"
 RES_DIR = REPO / "results"
 TMP_DIR = REPO / "tmp"
+# fitted PySR models, one pickle per template, target and seed
+MODEL_DIR = RES_DIR / "sr_models"
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
 os.makedirs(RES_DIR, exist_ok=True)
 
 data = pd.read_csv(REPO / "data/CoCrCuFeNi_684.csv").rename(columns={"T_K": "T"})
