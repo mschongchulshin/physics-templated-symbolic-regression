@@ -1,6 +1,6 @@
 """LODO folds on the verified experimental data: hold out one paper of one alloy system.
 
-Source: leakfree_V.pkl, the 138 verified rows (47 papers checked against the original papers), cast material only.
+Source: verified_V.pkl, the 138 verified rows (47 papers checked against the original papers), cast material only.
 Repeats are not deleted globally here, that emptied the pools. Instead the leak is removed inside each fold:
 
   fold = (alloy system S, processing, test type, held-out paper)
@@ -64,7 +64,7 @@ def check(V, idx, verbose):
 
 
 def load(verbose=False):
-    V = pd.read_pickle(f"{HERE}/leakfree_V.pkl").reset_index(drop=True)
+    V = pd.read_pickle(f"{HERE}/verified_V.pkl").reset_index(drop=True)
     V = V[V.processing == "CAST"].copy()
     V["ck"] = V.vec.apply(lambda v: tuple(sorted((k, round(100 * x)) for k, x in v.items())))
     V["T_i"] = V["T"].round().astype(int)

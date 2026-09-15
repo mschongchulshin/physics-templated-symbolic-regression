@@ -20,8 +20,8 @@ FIG = f"{HERE}/figures"; os.makedirs(FIG, exist_ok=True)
 
 P = pd.read_csv(f"{HERE}/results_ptsr.csv")
 B = pd.read_csv(f"{HERE}/results_baselines.csv")
-M = pd.read_pickle(f"{HERE}/leakfree_M.pkl")
-V = pd.read_pickle(f"{HERE}/leakfree_V.pkl")
+M = pd.read_pickle(f"{HERE}/verified_M.pkl")
+V = pd.read_pickle(f"{HERE}/verified_V.pkl")
 
 ORDER = [
     ("T1|AlCrFeMnNi|CAST|C|Zhang 2019", "F1", "Tier 1"),
@@ -134,14 +134,14 @@ rows["Fold"] = rows.fold_id.map(SH); rows = rows[rows.Fold.notna()].sort_values(
 rows = rows[["Fold", "role", "lab_name", "doi", "formula", "processing", "test_type", "T_C", "YS_MPa", "verdict"]]
 readme = pd.DataFrame({"Item": ["Data", "Folds", "Models", "Features", "PT-SR selection", "Baseline aggregation", "Caution"],
     "Description": [
-        "LODO_leakfree_dataset.xlsx: 138 yield-strength values verified against the original articles (DOI per row).",
+        "LODO_verified_dataset.xlsx: 138 yield-strength values verified against the original articles (DOI per row).",
         "7 leave-one-laboratory-out folds within one alloy system, one processing route and one test type. F1 passes every rule; F2-F3 extrapolate in composition; F4-F6 have no full-system composition in training; F7 (Wei 2018 CoCrFeNi) trains on a single composition.",
         "PT-SR 9 templates (repo lodo/ptsr_templates.py) and 9 baselines (repo baselines/lodo_comparison/run.py), code and hyperparameters unchanged; seeds 0-4, PySR niterations 30.",
         "Element fractions of the alloy system (zero for absent elements), S_mix, H_mix, delta, VEC, dChi, r_avg, chi_avg, T (K), as in repo lodo/features.py.",
         "Fair: template with the highest mean training R2 over 5 seeds, reporting its mean test R2. Oracle: highest mean test R2 (upper bound, uses test data).",
         "Median test R2 over seeds (Liu RF and SISSO single seed), as in repo lodo/run_baselines.py.",
         "Test sets hold 3-11 measurements and several span less than 110 MPa (F1, F5, F6), so R2 becomes strongly negative for errors of a few tens of MPa. MAE skill = 1 - MAE(model)/MAE(predicting the training mean) is reported alongside: > 0 beats the naive reference, 1 is perfect."]})
-out = f"{HERE}/LODO_leakfree_benchmark.xlsx"
+out = f"{HERE}/LODO_benchmark.xlsx"
 with pd.ExcelWriter(out, engine="openpyxl") as w:
     readme.to_excel(w, sheet_name="README", index=False)
     summ.to_excel(w, sheet_name="summary_by_method", index=False)
@@ -201,7 +201,7 @@ for a_ in axes:
 h = [Line2D([], [], marker=mk[j], ls="none", ms=4.5, color="#555555", label=LEG[f]) for j, f in enumerate(FI.Fold)]
 axK.legend(handles=h, loc="upper center", bbox_to_anchor=(0.55, -0.24), ncol=4, fontsize=6.3, handletextpad=0.2, columnspacing=0.9)
 N.panel_label(axC, "a", dx=-0.62, dy=1.07); N.panel_label(axK, "b", dx=-0.02, dy=1.07); N.panel_label(axR, "c", dx=-0.02, dy=1.07)
-fig.savefig(f"{FIG}/Fig5_leakfree_lodo.svg", bbox_inches="tight"); fig.savefig(f"{FIG}/Fig5_leakfree_lodo.png", bbox_inches="tight", dpi=300)
+fig.savefig(f"{FIG}/Fig5_lodo.svg", bbox_inches="tight"); fig.savefig(f"{FIG}/Fig5_lodo.png", bbox_inches="tight", dpi=300)
 plt.close(fig)
 
 # ---- Supplementary figure: per-fold heatmaps (R2 and MAE skill) --------------------
@@ -220,7 +220,7 @@ for ax, T, title, vmin, fmt in [(axs[0], R2, "Test R² (colour clipped to [−1,
     for s_ in ax.spines.values(): s_.set_visible(False)
     cb = fig.colorbar(im, ax=ax, fraction=0.022, pad=0.01); cb.set_label(title, fontsize=6.5)
 N.panel_label(axs[0], "a", dx=-0.3, dy=1.04); N.panel_label(axs[1], "b", dx=-0.3, dy=1.04)
-fig.savefig(f"{FIG}/SuppFig_leakfree_lodo_perfold.svg", bbox_inches="tight"); fig.savefig(f"{FIG}/SuppFig_leakfree_lodo_perfold.png", bbox_inches="tight", dpi=300)
+fig.savefig(f"{FIG}/SuppFig_lodo_perfold.svg", bbox_inches="tight"); fig.savefig(f"{FIG}/SuppFig_lodo_perfold.png", bbox_inches="tight", dpi=300)
 plt.close(fig)
 
 pd.set_option("display.width", 250)

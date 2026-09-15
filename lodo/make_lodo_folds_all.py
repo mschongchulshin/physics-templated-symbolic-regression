@@ -1,6 +1,6 @@
 """LODO folds for every property in the Borg MPEA dataset, with the same rules as the yield strength folds.
 
-Properties: YS (verified rows, leakfree_V.pkl), and UTS, elongation, HV, density, modulus taken from the raw
+Properties: YS (verified rows, verified_V.pkl), and UTS, elongation, HV, density, modulus taken from the raw
 dataset (data/LODO_experimental_dataset.csv). The raw values are NOT yet checked against the original papers, only YS is.
 
 Rules, identical for every property:

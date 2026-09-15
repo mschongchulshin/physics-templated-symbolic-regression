@@ -1,4 +1,4 @@
-"""PT-SR main implementation (src/run_sr_template.py settings) applied to the 7 leak-free LODO folds.
+"""PT-SR main implementation (src/run_sr_template.py settings) applied to the leave-one-paper-out folds.
 
 Faithful to the paper's main PT-SR:
   PySR populations=40, population_size=60, turbo, bumper, niterations=200 (free_2stage stage 2: 300),
@@ -51,14 +51,14 @@ TEMPLATES = ["additive", "multiplicative", "power_law", "thermal_softening", "ar
 
 
 def jobs(seeds):
-    M = pd.read_pickle(f"{HERE}/leakfree_M.pkl")
+    M = pd.read_pickle(f"{HERE}/verified_M.pkl")
     return [(f, t, s) for f in sorted(M.fold_id.unique()) for t in TEMPLATES for s in seeds]
 
 
 def build(fid):
     sys.path.insert(0, f"{REPO}/lodo")
     from features import hume_rothery_features
-    V = pd.read_pickle(f"{HERE}/leakfree_V.pkl"); M = pd.read_pickle(f"{HERE}/leakfree_M.pkl")
+    V = pd.read_pickle(f"{HERE}/verified_V.pkl"); M = pd.read_pickle(f"{HERE}/verified_M.pkl")
     elem = sorted(re.findall(r"[A-Z][a-z]?", fid.split("|")[1]))
     cols = [f"x_{e}" for e in elem] + ["S_mix", "H_mix", "delta", "VEC", "dChi", "r_avg", "chi_avg"]
     out = {}

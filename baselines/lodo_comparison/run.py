@@ -2,7 +2,7 @@
 Baseline fitters shared by the leave-one-paper-out workflow.
 
 This file defines one fit_predict_* function per published baseline.
-lodo_leakfree/baselines_lodo.py imports them and drives the evaluation over
+lodo/baselines_lodo.py imports them and drives the evaluation over
 the leave-one-paper-out folds.
 
 Each is our own implementation, written from the published

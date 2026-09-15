@@ -35,12 +35,12 @@ form that governs the measured response is unknown.
 
 ```
 data/          the corpus, its derived features, the experimental measurements
-               behind the cross-source folds, and the two workbooks submitted
-               with the paper
+               behind the leave-one-paper-out folds, and the two workbooks
+               submitted with the paper
 equations/     all 660 discovered equations, sympy-parseable
 src/           the two-stage search, the nine templates, the ML and DL baselines
 baselines/     the published models re-trained on this corpus
-lodo_leakfree/ leave-one-paper-out over eighteen folds
+lodo/          leave-one-paper-out over eighteen folds
 inverse_design/  optimisation of the closed forms and the screening benchmark
 analysis/      SHAP attribution, the equivalence tests, hyperparameter sweeps,
                learning curves, supplementary figures
@@ -71,7 +71,7 @@ Unless noted, each command writes under `results/`.
 | Fig. 3 | the same run, which writes the elected equation per target to `equations/` |
 | Fig. 4 | `python analysis/shap_attribution.py && python analysis/shap_beeswarm.py` |
 | Supp. Note 3 | `python analysis/equivalence_tost.py` |
-| Fig. 5 | `python lodo_leakfree/make_lodo_folds_all.py && python lodo_leakfree/ptsr_main_lodo.py && python lodo_leakfree/baselines_lodo.py run 4` |
+| Fig. 5 | `python lodo/make_lodo_folds_all.py && python lodo/ptsr_main_lodo.py && python lodo/baselines_lodo.py run 4` |
 | Fig. 6a-h | `python inverse_design/run_inverse_design.py` |
 | Fig. 6i | `python inverse_design/analysis_roc_interaction.py` |
 | Supp. Figs. 1, 2 | `python analysis/render_supp_figs.py` |
@@ -114,6 +114,8 @@ exact replay, at a large cost in wall time.
 | `data/Source_Data.xlsx` | the numbers behind every figure panel and supplementary table |
 | `results/cv_results/ptsr_best5_seeds.csv` | the five best-scoring seeds per target out of thirty, which the equivalence test compares |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
+| `lodo/verified_V.pkl` | the 138 yield-strength rows checked against the original papers |
+| `lodo/verified_M.pkl`, `lodo/verified_F.pkl` | which rows fall in which fold, and the fold table |
 
 The molecular-dynamics trajectories and the LAMMPS input scripts that produced
 them are not part of this deposit. The corpus above is what the symbolic
