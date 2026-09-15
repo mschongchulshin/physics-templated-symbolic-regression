@@ -1,25 +1,12 @@
 """
-Baseline fitters shared by the leave-one-dataset-out workflow.
+Baseline fitters shared by the leave-one-paper-out workflow.
 
 This file defines one fit_predict_* function per published baseline.
-lodo/run_baselines.py imports them and drives the evaluation over the folds
-that lodo/build_folds.py cuts from the MPEA table.
+lodo_leakfree/baselines_lodo.py imports them and drives the evaluation over
+the leave-one-paper-out folds.
 
-to all external SOTA baselines, on the MPEA experimental dataset
-(MPEA_figshare_dataset.csv).
-
-Protocol (per fold):
-  - Pick (Composition system, Processing method, Property, Test_Dataset)
-  - Filter MPEA data to that composition system + processing
-  - Split: rows from Test_Dataset's source -> test
-           rows from other sources         -> train
-  - Train baseline, predict on test, compute R^2 / MAE / RMSE.
-
-We evaluate ALL 134 LODO folds (CAST/WROUGHT/ANNEAL x YS/Elongation) for full
-coverage, with primary focus on the 18 main FCC CAST folds (Composition x
-Source) the paper R3 reports.
-
-Baselines (all in same script for unified protocol):
+Each is our own implementation, written from the published
+description. Sources are listed below.
 
 Smooth class:
   2. Liu MLP (npj 2024)      -- 3-layer MLP regressor

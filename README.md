@@ -40,7 +40,7 @@ data/          the corpus, its derived features, the experimental measurements
 equations/     all 660 discovered equations, sympy-parseable
 src/           the two-stage search, the nine templates, the ML and DL baselines
 baselines/     the published models re-trained on this corpus
-lodo/          leave-one-dataset-out over six cross-source folds
+lodo_leakfree/ leave-one-paper-out over eighteen folds
 inverse_design/  optimisation of the closed forms and the screening benchmark
 analysis/      SHAP attribution, the equivalence tests, hyperparameter sweeps,
                learning curves, supplementary figures
@@ -71,7 +71,7 @@ Unless noted, each command writes under `results/`.
 | Fig. 3 | the same run, which writes the elected equation per target to `equations/` |
 | Fig. 4 | `python analysis/shap_attribution.py && python analysis/shap_beeswarm.py` |
 | Supp. Note 3 | `python analysis/equivalence_tost.py` |
-| Fig. 5 | `python lodo/build_folds.py && python lodo/run_ptsr.py && python lodo/run_baselines.py` |
+| Fig. 5 | `python lodo_leakfree/make_lodo_folds_all.py && python lodo_leakfree/ptsr_main_lodo.py && python lodo_leakfree/baselines_lodo.py run 4` |
 | Fig. 6a-h | `python inverse_design/run_inverse_design.py` |
 | Fig. 6i | `python inverse_design/analysis_roc_interaction.py` |
 | Supp. Figs. 1, 2 | `python analysis/render_supp_figs.py` |
