@@ -111,7 +111,7 @@ exact replay, at a large cost in wall time.
 | `data/features_vif50.csv` | what survived VIF < 50, per sample, before the two removed on physical grounds |
 | `data/LODO_experimental_dataset.csv` | the experimental measurements the cross-source folds are cut from. Source Data holds the fold results, not the underlying table |
 | `data/Supplementary_Data_1_MD_corpus.xlsx` | the training corpus as submitted with the paper |
-| `data/Source_Data.xlsx` | the numbers behind every figure panel and supplementary table, including the equation PT-SR elected for each leave-one-paper-out fold |
+| `data/Source_Data.xlsx` | the numbers behind every figure panel and supplementary table |
 | `results/cv_results/ptsr_best5_seeds.csv` | the five best-scoring seeds per target out of thirty, which the equivalence test compares |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
 
