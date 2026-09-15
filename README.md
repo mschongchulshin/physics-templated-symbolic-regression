@@ -70,7 +70,6 @@ Unless noted, each command writes under `results/`.
 | Fig. 2a, 2b | `python src/run_sr_template.py 0 5 && python src/compile_results.py` |
 | Fig. 3 | the same run, which writes the elected equation per target to `equations/` |
 | Fig. 4 | `python analysis/shap_attribution.py && python analysis/shap_beeswarm.py` |
-| Supp. Note 3 | `python analysis/equivalence_tost.py` |
 | Fig. 5 | `python lodo/make_lodo_folds_all.py && python lodo/ptsr_main_lodo.py && python lodo/baselines_lodo.py run 4` |
 | Fig. 6a-h | `python inverse_design/run_inverse_design.py` |
 | Fig. 6i | `python inverse_design/analysis_roc_interaction.py` |
@@ -78,6 +77,7 @@ Unless noted, each command writes under `results/`.
 | Supp. Figs. 3-5 | `python analysis/sr_sensitivity_worker.py <worker_id> <n_workers>` then `python analysis/sr_sensitivity_plot.py` |
 | Supp. Figs. 6, 7 | `python analysis/optuna_convergence.py` |
 | Supp. Fig. 8 | `python src/run_shuffled_y.py 0 5` |
+| Supp. Note 3 | `python analysis/equivalence_tost.py` |
 
 The full symbolic-regression sweep is 2,700 runs and takes days on a laptop.
 It does not have to be rerun to check the paper: the finished sweep is in
@@ -102,20 +102,32 @@ exact replay, at a large cost in wall time.
 
 ## Data
 
+### Molecular dynamics, the corpus the search trains on
+
 | File | What it holds |
 |---|---|
-| `data/CoCrCuFeNi_684.csv` | the corpus the code reads, 232 compositions x 3 temperatures. Supplementary Data 1 is the 228 that were trained on; this adds the four held out for verification |
+| `data/CoCrCuFeNi_684.csv` | 232 compositions x 3 temperatures, all twelve targets. Supplementary Data 1 holds the 228 that were trained on; this adds the four held out for verification |
+| `data/Supplementary_Data_1_MD_corpus.xlsx` | the same corpus as submitted with the paper |
 | `data/compositions_228.csv` | the composition grid on its own |
 | `data/features_13.csv` | the thirteen model inputs, per sample |
 | `data/features_93_library.csv` | the feature library before VIF reduction, per sample. Source Data holds its correlation matrix, not the values |
 | `data/features_vif50.csv` | what survived VIF < 50, per sample, before the two removed on physical grounds |
-| `data/LODO_experimental_dataset.csv` | the experimental measurements the folds are cut from. Source Data holds the fold results, not the underlying table |
-| `data/Supplementary_Data_1_MD_corpus.xlsx` | the training corpus as submitted with the paper |
-| `data/Source_Data.xlsx` | the numbers behind every figure panel and supplementary table |
-| `results/cv_results/ptsr_best5_seeds.csv` | the five best-scoring seeds per target out of thirty, which the equivalence test compares |
-| `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
+
+### Experimental, the measurements the cross-paper folds are cut from
+
+| File | What it holds |
+|---|---|
+| `data/LODO_experimental_dataset.csv` | the published alloy measurements, third party, see below |
 | `lodo/verified_V.pkl` | the 138 yield-strength rows checked against the original papers |
 | `lodo/verified_M.pkl`, `lodo/verified_F.pkl` | which rows fall in which fold, and the fold table |
+
+### Results
+
+| File | What it holds |
+|---|---|
+| `data/Source_Data.xlsx` | the numbers behind every figure panel and supplementary table |
+| `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
+| `results/cv_results/ptsr_best5_seeds.csv` | the five best-scoring seeds per target out of thirty, which the equivalence test compares |
 
 The molecular-dynamics trajectories and the LAMMPS input scripts that produced
 them are not part of this deposit. The corpus above is what the symbolic
