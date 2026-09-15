@@ -57,8 +57,9 @@ def check(V, idx, verbose):
     if mean <= 0 or (hi - lo) / mean <= SPREAD:
         return []
     if verbose:
-        print(f"   불일치 제거: {g.formula.iloc[0]} {int(g.T_i.iloc[0])}C {g.test_type.iloc[0]} "
-              f"값 {lo:.0f}~{hi:.0f} ({', '.join(sorted(g.lab_name.unique()))})")
+        print(f"   dropped, sources disagree: {g.formula.iloc[0]} "
+              f"{int(g.T_i.iloc[0])}C {g.test_type.iloc[0]} "
+              f"{lo:.0f}-{hi:.0f} ({', '.join(sorted(g.lab_name.unique()))})")
     return list(idx)
 
 
@@ -73,7 +74,7 @@ def load(verbose=False):
     V["els"] = V.vec.apply(frozenset)
     bad = conflicting(V, verbose)
     if verbose:
-        print(f"불일치 조건으로 제거한 행 {len(bad)} / {len(V)}")
+        print(f"rows dropped where sources disagree: {len(bad)} / {len(V)}")
     return V.drop(index=bad).reset_index(drop=True)
 
 
@@ -129,5 +130,10 @@ if __name__ == "__main__":
     print("\nusable folds", int(D.usable.sum()), "of", len(D))
     for f in F:
         if f["usable"]:
-            print(f"\n{f['fold_id']}\n  TEST  {f['held_out']} {f['n_test']}점 ({f['test_comps']}조성, {f['T_test']}C, {f['y_test']} MPa, SD {f['y_test_sd']})"
-                  f"\n  TRAIN {f['train_papers']} = {f['n_train']}점 ({f['train_comps']}조성, {f['T_train']}C, {f['y_train']} MPa), 누수로 제거 {f['leak_rows_removed']}행")
+            print(f"\n{f['fold_id']}\n  TEST  {f['held_out']} {f['n_test']} rows "
+                  f"({f['test_comps']} compositions, {f['T_test']}C, "
+                  f"{f['y_test']} MPa, SD {f['y_test_sd']})"
+                  f"\n  TRAIN {f['train_papers']} papers = {f['n_train']} rows "
+                  f"({f['train_comps']} compositions, {f['T_train']}C, "
+                  f"{f['y_train']} MPa), removed for leakage "
+                  f"{f['leak_rows_removed']} rows")

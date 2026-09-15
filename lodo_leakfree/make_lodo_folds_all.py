@@ -1,7 +1,7 @@
 """LODO folds for every property in the Borg MPEA dataset, with the same rules as the yield strength folds.
 
 Properties: YS (verified rows, leakfree_V.pkl), and UTS, elongation, HV, density, modulus taken from the raw
-dataset (MPEA_dataset.csv). The raw values are NOT yet checked against the original papers, only YS is.
+dataset (data/LODO_experimental_dataset.csv). The raw values are NOT yet checked against the original papers, only YS is.
 
 Rules, identical for every property:
   cast material only, one alloy system per pool (element set S, or S with one element at zero)

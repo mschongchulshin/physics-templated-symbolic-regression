@@ -220,19 +220,6 @@ def parse_formula(formula):
     return out if out else None
 
 
-def map_source(ref_id):
-    if pd.isna(ref_id):
-        return "Unknown"
-    rid = int(ref_id)
-    if rid <= 66:
-        return "Borg"
-    if rid <= 97:
-        return "Couzinie"
-    if rid <= 263:
-        return "Iyer"
-    return "Gorsse"
-
-
 def to_kelvin(t_celsius):
     if pd.isna(t_celsius):
         return 298.15
@@ -248,7 +235,6 @@ df_mpea["_parsed"] = df_mpea["FORMULA"].apply(parse_formula)
 df_mpea["_elem_set"] = df_mpea["_parsed"].apply(
     lambda p: "".join(sorted(p.keys())) if p else None
 )
-df_mpea["_source"] = df_mpea["IDENTIFIER: Reference ID"].apply(map_source)
 df_mpea["_T_K"] = df_mpea["PROPERTY: Test temperature ($^\\circ$C)"].apply(to_kelvin)
 
 PROP_COL = {
@@ -257,100 +243,11 @@ PROP_COL = {
 }
 
 log(f"MPEA rows: {len(df_mpea)}")
-log(f"Source counts: {df_mpea['_source'].value_counts().to_dict()}")
 log(f"Processing counts: {df_mpea['PROPERTY: Processing method'].value_counts().to_dict()}")
 
 # ============================================================
 # 4. Per-fold feature builder
 # ============================================================
-def build_fold_features(comp_str, processing, prop_key, test_source_base, seed=0):
-    """Filter MPEA rows for a fold and build features.
-
-    Returns: dict with X_train, y_train, X_test, y_test, elem_order, n_train, n_test.
-    Returns None if no usable data.
-
-    Two regimes (matching PT-SR's apparent protocol):
-      A. Multi-source: rows from >=2 distinct sources exist → LODO split
-         (train = other sources, test = test source).
-      B. Single-source: all rows belong to one source → no true LODO possible
-         for this composition; do an interleaved 50/50 split (deterministic by
-         row index) to match PT-SR's apparent n_train=n_test pattern. We mark
-         these folds as `single_source=True`.
-    """
-    elem_order = sorted(set(re.findall(r"[A-Z][a-z]?", comp_str)))
-    elem_set = "".join(elem_order)
-    y_col = PROP_COL[prop_key]
-
-    mask = (
-        (df_mpea["_elem_set"] == elem_set)
-        & (df_mpea["PROPERTY: Processing method"] == processing)
-        & (df_mpea[y_col].notna())
-    )
-    sub = df_mpea[mask].copy()
-    if len(sub) == 0:
-        return None
-
-    feats = []
-    ys = []
-    sources = []
-    for _, row in sub.iterrows():
-        parsed = row["_parsed"]
-        amts = np.array([parsed.get(el, 0.0) for el in elem_order])
-        s = amts.sum()
-        if s == 0:
-            continue
-        x = amts / s
-        s_mix, h_mix, delta, vec, dchi, r_avg, chi_avg = hume_rothery_features(
-            elem_order, x
-        )
-        T_k = row["_T_K"]
-        feat = list(x) + [s_mix, h_mix, delta, vec, dchi, r_avg, chi_avg, T_k]
-        feats.append(feat)
-        ys.append(float(row[y_col]))
-        sources.append(row["_source"])
-
-    if len(feats) < 4:
-        return None
-    X = np.array(feats, dtype=np.float64)
-    y = np.array(ys, dtype=np.float64)
-    src = np.array(sources)
-
-    test_mask = src == test_source_base
-    train_mask = ~test_mask
-
-    single_source = False
-    if train_mask.sum() < 2 or test_mask.sum() < 2:
-        # Single-source regime: 50/50 deterministic split (every other row)
-        single_source = True
-        n = len(X)
-        rng = np.random.RandomState(0)  # deterministic across baselines
-        order = rng.permutation(n)
-        half = n // 2
-        train_idx = np.zeros(n, dtype=bool)
-        train_idx[order[:half]] = True
-        test_idx = ~train_idx
-        train_mask = train_idx
-        test_mask = test_idx
-        if train_mask.sum() < 2 or test_mask.sum() < 2:
-            return None
-
-    return {
-        "X_train": X[train_mask],
-        "y_train": y[train_mask],
-        "X_test": X[test_mask],
-        "y_test": y[test_mask],
-        "n_train": int(train_mask.sum()),
-        "n_test": int(test_mask.sum()),
-        "elem_order": elem_order,
-        "single_source": single_source,
-    }
-
-
-def fold_id(row):
-    return (
-        f"{row['Composition']}|{row['Processing']}|{row['Property']}"
-        f"|{row['Test_Dataset']}"
-    )
 
 
 # ============================================================

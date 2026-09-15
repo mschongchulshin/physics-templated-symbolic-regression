@@ -1,6 +1,6 @@
 """Repeat-free CAST pools for properties other than yield strength, using the rules of the YS dataset.
 
-Source: the raw Borg MPEA dataset (MPEA_dataset.csv), CAST rows only. Values are NOT yet checked against the
+Source: the raw Borg MPEA dataset (data/LODO_experimental_dataset.csv), CAST rows only. Values are NOT yet checked against the
 original papers, unlike the YS dataset. This is a screening step, the property that works gets verified after.
 
 Rules, identical to make_norepeat.py:
