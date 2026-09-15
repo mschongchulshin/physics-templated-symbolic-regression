@@ -109,7 +109,7 @@ exact replay, at a large cost in wall time.
 | `data/features_13.csv` | the thirteen model inputs, per sample |
 | `data/features_93_library.csv` | the feature library before VIF reduction, per sample. Source Data holds its correlation matrix, not the values |
 | `data/features_vif50.csv` | what survived VIF < 50, per sample, before the two removed on physical grounds |
-| `data/LODO_experimental_dataset.csv` | the experimental measurements the cross-source folds are cut from. Source Data holds the fold results, not the underlying table |
+| `data/LODO_experimental_dataset.csv` | the experimental measurements the folds are cut from. Source Data holds the fold results, not the underlying table |
 | `data/Supplementary_Data_1_MD_corpus.xlsx` | the training corpus as submitted with the paper |
 | `data/Source_Data.xlsx` | the numbers behind every figure panel and supplementary table |
 | `results/cv_results/ptsr_best5_seeds.csv` | the five best-scoring seeds per target out of thirty, which the equivalence test compares |
