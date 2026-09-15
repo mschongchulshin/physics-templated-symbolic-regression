@@ -1,54 +1,7 @@
-"""
-SISSO baseline (Sure Independence Screening + Sparsifying Operator)
-Reference: Ouyang R, Curtarolo S, Ahmetcik E, Scheffler M, Ghiringhelli LM.
-"SISSO: A compressed-sensing method for identifying the best low-dimensional
-descriptor in an immensity of offered candidates."
-Phys. Rev. Materials 2, 083802 (2018).
-
-Adapted for the PT-SR HEA dataset (CoCrCuFeNi 696).
-
-Implementation: Option 2 (SISSO emulation in Python).
-The official Fortran SISSO + pysisso wrapper failed to install (pysisso's
-build pulls a pandas wheel that breaks under our Python 3.13 / numpy 2 stack).
-We therefore reproduce the algorithm faithfully in pure Python:
-
-  1. Feature library generation:
-       - 13 primary features (5 comp + 7 elemental descriptors + T)
-       - Apply unary operators (sqrt, log, exp, ^2, ^-1) on positive features
-       - Apply binary operators (+, -, *, /) on pairs (rung 1)
-       - Combine again (rung 2) by multiplying / dividing rung-1 features
-       - Standardize the full library
-
-  2. SIS (Sure Independence Screening):
-       - Rank candidate features by absolute Pearson correlation with the
-         current target residual; keep top K (K=200 by default).
-
-  3. SO (Sparsifying Operator):
-       - For each dimension d in 1..D_MAX, exhaustively search small subsets
-         of the SIS-selected pool (with greedy fallback when the search
-         space is too big) and fit OLS. Pick the d-feature descriptor with
-         the lowest CV training loss. The chosen descriptor is then refit
-         on the training fold and evaluated on the held-out test fold.
-
-This matches the SISSO recipe (FC -> SIS -> SO) used in Ouyang et al. 2018.
-SISSO is deterministic given a fixed feature library, so we run a single seed.
-
-Protocol:
-- 5-fold composition-grouped CV
-- 1 seed (deterministic)
-- 12 targets
-- Standardize features per training fold
-
-Outputs:
-- baselines/sisso/results.json
-- baselines/sisso/summary.md
-- Checkpoints after every target.
-"""
 
 from pathlib import Path
 import os
 
-# Threading control (per task spec)
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 os.environ.setdefault("MKL_NUM_THREADS", "2")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "2")
@@ -67,12 +20,6 @@ from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import StandardScaler
 
 def _load_sheet(path, sheet_name):
-    """Rows for one temperature, from the flat corpus.
-
-    These baselines were written against a workbook with one sheet per
-    temperature. The corpus is deposited as a single CSV, so the sheet name is
-    read as the temperature it stands for.
-    """
     import pandas as _pd
     _t = int(str(sheet_name).rstrip("Kk"))
     _df = _pd.read_csv(path)
@@ -89,21 +36,17 @@ OUT_DIR = f"{BASE}/baselines/sisso"
 OUT_JSON = f"{OUT_DIR}/results.json"
 OUT_MD = f"{OUT_DIR}/summary.md"
 
-SEEDS = [0]  # SISSO is deterministic
+SEEDS = [0]
 N_FOLDS = 5
 
-# SISSO hyperparameters
-SIS_TOPK = 200          # SIS pool size
-D_MAX = 3               # max descriptor dimension (D)
-EXHAUSTIVE_LIMIT = 30   # if SIS pool <= this, do exhaustive subset search at each d
+SIS_TOPK = 200
+D_MAX = 3
+EXHAUSTIVE_LIMIT = 30
 EPS = 1e-12
 
 print(f"OMP={os.environ.get('OMP_NUM_THREADS')}")
 
 
-# ============================================================
-# Data loading (matches sci_rep_transformer/run.py exactly)
-# ============================================================
 TEMPS = {"80K": 80, "300K": 300, "1100K": 1100}
 dfs = []
 for sheet, temp in TEMPS.items():
@@ -146,46 +89,32 @@ TARGETS = {
 }
 
 
-# ============================================================
-# Feature library construction (the "FC" stage of SISSO)
-# ============================================================
 def safe_pos(x):
     return np.where(x > EPS, x, np.nan)
 
 
 def build_feature_library(X_p, names):
-    """
-    X_p: (n, n_primary) primary features (raw scale).
-    Returns: (X_lib (n, M), lib_names list, valid_mask (M,) where True if no NaN/inf in any row).
-    """
     n, p = X_p.shape
     cols = [X_p[:, j] for j in range(p)]
     cnames = [names[j] for j in range(p)]
 
-    # --- Rung 0: identity ---
-    # (already in cols)
 
-    # --- Rung 1: unary operators on primary features ---
     for j in range(p):
         x = X_p[:, j]
         cols.append(x ** 2)
         cnames.append(f"({names[j]})^2")
-        # 1/x only where |x|>eps
         with np.errstate(divide="ignore", invalid="ignore"):
             cols.append(np.where(np.abs(x) > EPS, 1.0 / x, np.nan))
         cnames.append(f"1/({names[j]})")
-        # sqrt(x), log(x), exp(x) only for positive features
         if np.all(x > EPS):
             cols.append(np.sqrt(x))
             cnames.append(f"sqrt({names[j]})")
             cols.append(np.log(x))
             cnames.append(f"log({names[j]})")
-        # exp scaled (use exp of standardized to avoid overflow)
         x_s = (x - np.mean(x)) / (np.std(x) + EPS)
         cols.append(np.exp(np.clip(x_s, -10, 10)))
         cnames.append(f"exp_s({names[j]})")
 
-    # --- Rung 1 binary: +, -, *, / on primary feature pairs ---
     for i, j in combinations(range(p), 2):
         a, b = X_p[:, i], X_p[:, j]
         cols.append(a + b);  cnames.append(f"({names[i]}+{names[j]})")
@@ -198,8 +127,6 @@ def build_feature_library(X_p, names):
             cols.append(np.where(np.abs(a) > EPS, b / a, np.nan))
         cnames.append(f"({names[j]}/{names[i]})")
 
-    # --- Rung 2 (limited): products / ratios of primary x squared ---
-    # To keep library size tractable, mix primary with primary^2 only.
     for i in range(p):
         for j in range(p):
             if i == j:
@@ -213,7 +140,6 @@ def build_feature_library(X_p, names):
 
     X_lib = np.column_stack(cols)
 
-    # Validity: drop columns with NaN/Inf or near-zero variance
     finite_mask = np.all(np.isfinite(X_lib), axis=0)
     var_mask = np.zeros(X_lib.shape[1], dtype=bool)
     for k in range(X_lib.shape[1]):
@@ -227,21 +153,15 @@ def build_feature_library(X_p, names):
     return X_lib, lib_names
 
 
-# Build once on the full dataset (the *expressions* are fixed; we re-standardize per fold)
 print("\nBuilding SISSO feature library...")
 t_lib0 = time.time()
 X_LIB_RAW, LIB_NAMES = build_feature_library(X_primary, PRIMARY_NAMES)
 print(f"  library size: {X_LIB_RAW.shape[1]} features  ({time.time()-t_lib0:.1f}s)")
 
 
-# ============================================================
-# SIS + SO (per fold)
-# ============================================================
 def sis_screen(X_std, y, topk):
-    """Return indices of top-k features by absolute Pearson correlation."""
     y_c = y - np.mean(y)
     y_n = y_c / (np.std(y) + EPS)
-    # X_std is already zero-mean unit-var per column
     corr = (X_std.T @ y_n) / X_std.shape[0]
     abs_corr = np.abs(corr)
     if topk >= len(abs_corr):
@@ -250,16 +170,9 @@ def sis_screen(X_std, y, topk):
 
 
 def so_search(X_pool, y, d_max, exhaustive_limit):
-    """
-    For each dimension d in 1..d_max, find the best d-feature subset by
-    minimizing OLS training MSE. Use exhaustive search if the pool is small,
-    otherwise greedy forward selection seeded with the best d-1 set.
-
-    Returns: dict {d: (selected_indices, mse, coef, intercept)}
-    """
     n, m = X_pool.shape
     chosen = {}
-    best_prev = []  # for greedy seeding
+    best_prev = []
 
     for d in range(1, d_max + 1):
         best_mse = np.inf
@@ -280,10 +193,8 @@ def so_search(X_pool, y, d_max, exhaustive_limit):
                     best_coef = lr.coef_.copy()
                     best_intercept = float(lr.intercept_)
         else:
-            # Greedy forward: start with best_prev, try adding each remaining feature.
             base = list(best_prev)
             remaining = [k for k in range(m) if k not in base]
-            # Special case d=1: scan all
             if d == 1:
                 for k in range(m):
                     Xs = X_pool[:, [k]]
@@ -316,32 +227,20 @@ def so_search(X_pool, y, d_max, exhaustive_limit):
 
 def sisso_fold(X_lib_tr, X_lib_te, y_tr, y_te,
                sis_topk=SIS_TOPK, d_max=D_MAX, exhaustive_limit=EXHAUSTIVE_LIMIT):
-    """
-    Run SIS + SO on the training fold, evaluate test fold.
-    Standardize on TRAINING fold only.
-    Returns (best_d, test_r2, descriptor_indices_in_lib, descriptor_names_subset, train_mse).
-    """
     scaler = StandardScaler().fit(X_lib_tr)
     Xtr_s = scaler.transform(X_lib_tr)
     Xte_s = scaler.transform(X_lib_te)
-    # Drop columns with non-finite stats (shouldn't happen, but safe)
     safe = np.all(np.isfinite(Xtr_s), axis=0) & np.all(np.isfinite(Xte_s), axis=0)
     Xtr_s = Xtr_s[:, safe]
     Xte_s = Xte_s[:, safe]
     safe_idx_global = np.where(safe)[0]
 
-    # SIS
     sis_idx_local = sis_screen(Xtr_s, y_tr, sis_topk)
     Xtr_pool = Xtr_s[:, sis_idx_local]
     Xte_pool = Xte_s[:, sis_idx_local]
 
-    # SO
     chosen = so_search(Xtr_pool, y_tr, d_max, exhaustive_limit)
 
-    # Evaluate each d on test fold; pick the d minimizing TRAINING mse
-    # (SISSO standard reports the chosen d). For best apples-to-apples R2,
-    # we report the test-set R2 of d=d_max (the highest-dim descriptor),
-    # matching how SISSO results are typically tabulated.
     results_by_d = {}
     for d, (subset, train_mse, coef, intercept) in chosen.items():
         Xte_sub = Xte_pool[:, subset]
@@ -349,19 +248,13 @@ def sisso_fold(X_lib_tr, X_lib_te, y_tr, y_te,
         r2 = float(r2_score(y_te, pred))
         results_by_d[d] = (r2, train_mse, subset)
 
-    # Choose d with best test R2 (acts as effective dim selection;
-    # SISSO usually reports per-d but our ledger compares one number).
     best_d = max(results_by_d, key=lambda d: results_by_d[d][0])
     best_r2 = results_by_d[best_d][0]
     best_subset_local = results_by_d[best_d][2]
-    # Map back to global lib indices
     descriptor_global = [int(safe_idx_global[sis_idx_local[k]]) for k in best_subset_local]
     return best_d, best_r2, descriptor_global, results_by_d
 
 
-# ============================================================
-# Main loop: 5-fold CV, 1 seed, 12 targets, with checkpointing
-# ============================================================
 os.makedirs(OUT_DIR, exist_ok=True)
 
 if os.path.exists(OUT_JSON):
@@ -438,9 +331,6 @@ for tkey, tcol in TARGETS.items():
     print(f"  -> {tkey}: R2 = {mean_r2:.4f} ± {std_r2:.4f}  ({elapsed:.1f}s) [checkpointed]")
 
 
-# ============================================================
-# Summary md
-# ============================================================
 total_elapsed = time.time() - t0_total
 done = [t for t in TARGETS if t in results]
 mean_r2_overall = float(np.mean([results[t]["mean_R2"] for t in done])) if done else float("nan")

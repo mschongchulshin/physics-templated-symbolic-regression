@@ -1,34 +1,3 @@
-"""Two one-sided tests for equivalence between PT-SR and the best baseline.
-
-The paper reports that PT-SR is statistically equivalent to the best-performing
-published model on seven of the twelve targets, at a margin of +/-0.02 R2. That
-claim rests on a two-one-sided-tests procedure with a Benjamini-Hochberg
-correction across the twelve targets, and the result was tabulated in the
-source data without the code that produced it.
-
-The procedure, per target:
-
-  The best baseline is the one with the highest mean test R2 over the five
-  seeds. Each method contributes one mean R2 per seed, so both samples have
-  n = 5 and the pooled two-sample t has 2n - 2 = 8 degrees of freedom.
-
-  Equivalence asks whether the difference lies inside (-margin, +margin). TOST
-  runs two one-sided t tests against those bounds and takes the larger p, which
-  is the p for the composite null that the difference lies outside the interval.
-
-  Twelve targets means twelve tests, so the p values are corrected by
-  Benjamini-Hochberg at alpha = 0.05.
-
-This picks the same comparator as the paper on all twelve targets and the same
-verdict on eleven of them, from the deposited cross-validation runs. It does not reproduce the count of
-seven reported in the paper: the PT-SR R2 in the source data's Supp_Note_3_TOST
-sheet is higher than the same quantity in Fig_2a and in
-results/cv_results/sr_9templates_raw.csv, by 0.001 to 0.010 depending on the
-target, and no aggregation of the deposited runs reproduces it. Recomputed from
-the deposited numbers the count is six.
-
-Run from the repository root. Writes results/generated/equivalence_tost.csv.
-"""
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -40,7 +9,7 @@ OUTDIR.mkdir(parents=True, exist_ok=True)
 
 MARGIN = 0.02
 ALPHA = 0.05
-N_SEEDS = 5   # five seeds enter each arm of the test
+N_SEEDS = 5
 
 TARGET_NAME = {
     "Youngs_modulus": "Young's modulus", "UTS": "Ultimate tensile strength",
@@ -55,23 +24,16 @@ TARGET_NAME = {
 
 
 def tost_from_summary(m1, s1, n1, m2, s2, n2, margin):
-    """The larger of the two one-sided p values, from summary statistics.
-
-    Equivalence is rejected unless both one-sided tests reject, so the
-    composite p is the larger of the two.
-    """
     df = n1 + n2 - 2
     sp2 = ((n1 - 1) * s1 ** 2 + (n2 - 1) * s2 ** 2) / df
     se = np.sqrt(sp2 * (1 / n1 + 1 / n2))
     d = m1 - m2
-    # lower bound: is d > -margin?   upper bound: is d < +margin?
     p_lower = stats.t.sf((d + margin) / se, df)
     p_upper = stats.t.cdf((d - margin) / se, df)
     return max(p_lower, p_upper), df, d
 
 
 def benjamini_hochberg(p, alpha):
-    """Step-up FDR control. Returns adjusted p, rejection flags and ranks."""
     p = np.asarray(p, float)
     m = len(p)
     order = np.argsort(p)

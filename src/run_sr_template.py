@@ -1,12 +1,3 @@
-"""Nine-template symbolic regression over the twelve targets.
-
-Stage 1 fits a composition function at 300 K; stage 2 fits a temperature
-function to the residual ratios under each template in turn, and BIC elects one.
-Writes the discovered equations to equations/ and the fitted models to
-results/sr_models/.
-
-Usage: python3 src/run_sr_template.py <seed_start> <seed_end> [template]
-"""
 import pandas as pd, numpy as np, json, os, time, threading, sys, pickle
 from pathlib import Path
 from pysr import PySRRegressor
@@ -14,7 +5,7 @@ from sklearn.metrics import r2_score
 
 SEED_START     = int(sys.argv[1])
 SEED_END       = int(sys.argv[2])
-TEMPLATE_FILTER = sys.argv[3] if len(sys.argv) > 3 else None  # optional single template
+TEMPLATE_FILTER = sys.argv[3] if len(sys.argv) > 3 else None
 RUN_TIMEOUT = 600
 
 _watchdog_timer = None
@@ -32,7 +23,6 @@ REPO    = Path(__file__).resolve().parent.parent
 EQ_DIR  = REPO / "equations"
 RES_DIR = REPO / "results"
 TMP_DIR = REPO / "tmp"
-# fitted PySR models, one pickle per template, target and seed
 MODEL_DIR = RES_DIR / "sr_models"
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 os.makedirs(RES_DIR, exist_ok=True)
@@ -76,7 +66,6 @@ ALL_TEMPLATES = [
 ]
 TEMPLATES = [TEMPLATE_FILTER] if TEMPLATE_FILTER else ALL_TEMPLATES
 
-# Progress checkpoint (simple done-set, fast to check)
 tmpl_tag = f"_{TEMPLATE_FILTER}" if TEMPLATE_FILTER else ""
 CP_FILE = RES_DIR / f"done_fullfit{tmpl_tag}_s{SEED_START}to{SEED_END-1}.json"
 done = set(json.load(open(CP_FILE))) if CP_FILE.exists() else set()
@@ -89,7 +78,6 @@ def feat_mapping(cols):
 
 
 def extract_pareto(model, X_fit, y_fit):
-    """Extract pareto front from model.equations_ with r2/mae per equation."""
     pareto = []
     if model.equations_ is None:
         return pareto
@@ -110,7 +98,6 @@ def extract_pareto(model, X_fit, y_fit):
 
 
 def best_info(model, X_fit, y_fit):
-    """Return dict with best equation info."""
     best_pred = model.predict(X_fit)
     info = {
         "train_r2":  float(r2_score(y_fit, best_pred)),
@@ -251,7 +238,6 @@ for tkey, tcol in ALL_TARGETS.items():
                     save_pkl(hm, f"{MODEL_DIR}/{tn}_{tkey}_seed{seed}_stage2.pkl")
 
                 else:
-                    # additive, multiplicative, power_law, thermal_softening, arrhenius, free_2stage
                     td1 = str(TMP_DIR / f"ff_{tkey}_{tn}_g_s{seed}"); os.makedirs(td1, exist_ok=True)
                     gm = pysr(niterations=200, maxsize=20, parsimony=0.005,
                               unary_operators=["square","cube","sqrt","log"],

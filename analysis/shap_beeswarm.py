@@ -1,10 +1,3 @@
-"""Fig 2b (beeswarm) — per-sample SHAP for the UTS GBR surrogate (composition-only, 300 K).
-Each row = one feature (ranked by mean|SHAP|); each dot = one composition's SHAP value
-(x = signed SHAP, color = that feature's value low→high). Shows that no feature has a single
-sign: effects flip with composition, which a scalar ranking (or signed mean ≈ 0) hides —
-the contrast with PT-SR's explicit closed-form g(x).
-Data: shap_uts_300K_matrix.csv (full signed SHAP matrix + feature values).
-"""
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -19,7 +12,6 @@ OUT.mkdir(parents=True, exist_ok=True)
 M = pd.read_csv(BASE / "results" / "generated" / "shap_uts_300K_matrix.csv")
 shap_cols = [c for c in M.columns if c.startswith("SHAP_")]
 feats = [c[len("SHAP_"):] for c in shap_cols]
-# rank by mean|SHAP|
 order = sorted(feats, key=lambda f: np.abs(M[f"SHAP_{f}"]).mean(), reverse=True)
 
 PRETTY = {"Ni":"Ni","Co":"Co","Fe":"Fe","Cu":"Cu","Cr":"Cr",
@@ -36,7 +28,6 @@ for i, f in enumerate(order):
     yc = n - 1 - i
     sv = M[f"SHAP_{f}"].values
     xv = M[f"x_{f}"].values.astype(float)
-    # normalize feature value 0..1 for color
     rngv = xv.max() - xv.min()
     cn = (xv - xv.min())/rngv if rngv > 0 else np.full_like(xv, 0.5)
     jit = rng.uniform(-0.18, 0.18, size=len(sv))

@@ -1,7 +1,3 @@
-"""
-Build composition-weighted elemental features for HEA CoCrCuFeNi dataset.
-Uses mendeleev for elemental properties, applies VIF-based feature selection.
-"""
 
 import numpy as np
 import pandas as pd
@@ -12,7 +8,6 @@ from pathlib import Path
 import warnings
 
 def _load_sheet(path, sheet_name):
-    """Rows for one temperature, from the flat corpus."""
     import pandas as _pd
     _t = int(str(sheet_name).rstrip("Kk"))
     _df = _pd.read_csv(path)
@@ -21,8 +16,7 @@ def _load_sheet(path, sheet_name):
 
 warnings.filterwarnings("ignore")
 
-# ── Constants ──
-R_GAS = 8.314  # J/(mol·K)
+R_GAS = 8.314
 ELEMENTS = ["Co", "Cr", "Cu", "Fe", "Ni"]
 COMP_COLS = ["Co(%)", "Cr(%)", "Cu(%)", "Fe(%)", "Ni(%)"]
 SHEET_TEMP = {"80K": 80, "300K": 300, "1100K": 1100}
@@ -31,7 +25,6 @@ REPO     = Path(__file__).resolve().parent.parent
 DATA_PATH = REPO / "data/CoCrCuFeNi_684.csv"
 OUT_DIR   = REPO / "data/features"
 
-# Properties to exclude (non-physical / index-like)
 EXCLUDE_PROPS = {
     "price_per_kg", "political_stability_of_top_producer",
     "political_stability_of_top_reserve_holder",
@@ -42,7 +35,6 @@ EXCLUDE_PROPS = {
     "neutrons", "mass_number",
 }
 
-# ── Step 1: Load HEA data ──
 print("=" * 60)
 print("Step 1: Loading HEA data")
 print("=" * 60)
@@ -57,17 +49,14 @@ for sheet, T in SHEET_TEMP.items():
 data = pd.concat(frames, ignore_index=True)
 print(f"Total data points: {len(data)}")
 
-# Composition fractions (0-1)
 fracs = data[COMP_COLS].values / 100.0
 
-# ── Step 2: Get numeric elemental properties from mendeleev ──
 print("\n" + "=" * 60)
 print("Step 2: Extracting elemental properties from mendeleev")
 print("=" * 60)
 
 elem_objs = {sym: element(sym) for sym in ELEMENTS}
 
-# Collect all numeric attributes
 candidate_attrs = set()
 for sym in ELEMENTS:
     e = elem_objs[sym]
@@ -76,7 +65,6 @@ for sym in ELEMENTS:
             continue
         candidate_attrs.add(attr)
 
-# Filter to attributes that are numeric for ALL 5 elements and vary
 valid_props = {}
 for attr in sorted(candidate_attrs):
     if attr in EXCLUDE_PROPS:
@@ -98,7 +86,6 @@ for attr in sorted(candidate_attrs):
             all_valid = False
             break
     if all_valid and len(vals) == 5:
-        # Check that values differ across elements
         if len(set(vals)) > 1:
             valid_props[attr] = np.array(vals)
 
@@ -107,7 +94,6 @@ for p in sorted(valid_props.keys()):
     vals = valid_props[p]
     print(f"  {p}: {dict(zip(ELEMENTS, vals))}")
 
-# ── Step 3: Compute composition-weighted features ──
 print("\n" + "=" * 60)
 print("Step 3: Computing composition-weighted features")
 print("=" * 60)
@@ -115,16 +101,13 @@ print("=" * 60)
 feature_dict = {}
 
 for prop_name, prop_vals in sorted(valid_props.items()):
-    # P_avg = sum(x_i * P_i)
-    avg = fracs @ prop_vals  # shape (N,)
+    avg = fracs @ prop_vals
     feature_dict[f"{prop_name}_avg"] = avg
 
-    # delta_P = sqrt(sum(x_i * (P_i - P_avg)^2))
     diff_sq = (prop_vals[np.newaxis, :] - avg[:, np.newaxis]) ** 2
     delta = np.sqrt(np.sum(fracs * diff_sq, axis=1))
     feature_dict[f"{prop_name}_delta"] = delta
 
-# S_mix = -R * sum(x_i * ln(x_i)) for x_i > 0
 s_mix = np.zeros(len(data))
 for j in range(5):
     mask = fracs[:, j] > 0
@@ -132,17 +115,14 @@ for j in range(5):
 s_mix = -R_GAS * s_mix
 feature_dict["S_mix"] = s_mix
 
-# Temperature
 feature_dict["T"] = data["T"].values
 
-# VEC using group_id
 group_ids = np.array([elem_objs[sym].group_id for sym in ELEMENTS], dtype=float)
 vec = fracs @ group_ids
 feature_dict["VEC"] = vec
 
 features_full = pd.DataFrame(feature_dict)
 
-# Drop any columns with zero variance (can happen if delta is always 0)
 zero_var = features_full.columns[features_full.std() == 0]
 if len(zero_var) > 0:
     print(f"Dropping zero-variance columns: {list(zero_var)}")
@@ -151,29 +131,26 @@ if len(zero_var) > 0:
 print(f"Total features: {features_full.shape[1]}")
 print(f"Feature matrix shape: {features_full.shape}")
 
-# Save full features
 full_path = os.path.join(OUT_DIR, "features_93_library.csv")
 features_full.to_csv(full_path, index=False)
 print(f"Saved full features to {full_path}")
 
-# ── Step 4: VIF-based feature selection ──
 print("\n" + "=" * 60)
 print("Step 4: VIF-based feature selection (threshold = 10)")
 print("=" * 60)
 
 features_sel = features_full.copy()
-removal_log = []  # (feature_name, vif_value)
+removal_log = []
 
 iteration = 0
 while True:
     iteration += 1
     X = features_sel.values
-    # Add constant for VIF
     X_const = np.column_stack([np.ones(X.shape[0]), X])
 
     vifs = {}
     for i, col in enumerate(features_sel.columns):
-        vif_val = variance_inflation_factor(X_const, i + 1)  # +1 for constant
+        vif_val = variance_inflation_factor(X_const, i + 1)
         vifs[col] = vif_val
 
     max_feat = max(vifs, key=vifs.get)
@@ -189,7 +166,6 @@ while True:
 
 print(f"\nFeatures remaining: {features_sel.shape[1]} (removed {len(removal_log)})")
 
-# Final VIF values
 X_final = features_sel.values
 X_const = np.column_stack([np.ones(X_final.shape[0]), X_final])
 final_vifs = {}
@@ -200,12 +176,10 @@ print("\nFinal VIF values:")
 for col in sorted(final_vifs, key=final_vifs.get, reverse=True):
     print(f"  {col}: {final_vifs[col]:.2f}")
 
-# Save selected features
 sel_path = os.path.join(OUT_DIR, "features_vif_selected.csv")
 features_sel.to_csv(sel_path, index=False)
 print(f"\nSaved VIF-selected features to {sel_path}")
 
-# ── Step 5: Feature summary ──
 summary_path = os.path.join(OUT_DIR, "feature_summary.md")
 kept_set = set(features_sel.columns)
 

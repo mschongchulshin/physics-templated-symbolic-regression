@@ -1,10 +1,3 @@
-"""The 9 benchmark models on the verified LODO folds, tuned the same way as tune_baselines.py.
-
-For every fold the hyperparameters are chosen by leave-one-training-paper-out cross validation inside the
-training rows only, with Optuna TPE, then the model is refit on all training rows and predicts the held-out paper.
-Untuned repo defaults are also run for reference. Nothing about the held-out paper enters the choice.
-usage: python baselines_lodo.py run N_PROCS   |   python baselines_lodo.py report
-"""
 from pathlib import Path
 import os, sys, json, time, glob
 os.environ.setdefault("OMP_NUM_THREADS", "1"); os.environ.setdefault("MKL_NUM_THREADS", "1")

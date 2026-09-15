@@ -1,22 +1,8 @@
-"""Nested hyperparameter tuning of the baselines on the repeat-free LOCO pools (norepeat_V.pkl).
-
-Outer loop: leave one composition out (same folds as loco_benchmark.py and loco_ptsr.py).
-Inner loop: GroupKFold over the training compositions only (min(5, n compositions) splits). Optuna TPE picks the
-hyperparameters with the lowest inner MSE. The test composition is never used for the choice.
-For every trial the model is also refit on the whole outer training set and its test prediction is stored, so an
-ORACLE (best trial by test error, per held-out composition) can be reported as an upper bound. The oracle looks at
-the test data and is not a valid result.
-
-Models follow baselines/lodo_comparison/run.py with the fixed settings turned into search ranges. Two fixes enter as
-options the search may pick: target scaling for Liu MLP and an intercept for SISSO-lite. PySR without a template is
-not tuned here, the PT-SR run's free_1stage template is that model with the full budget and many seeds.
-usage: python tune_baselines.py run N_PROCS    |    python tune_baselines.py report
-"""
 from pathlib import Path
 import os, sys, json, time
 os.environ.setdefault("OMP_NUM_THREADS", "1"); os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("LOCO_DATA", "norepeat_V.pkl"); os.environ.setdefault("LOCO_MIN_ROWS", "6")
-TAG = os.environ.get("LOCO_TAG", "_norepeat")   # one tag per dataset so runs never mix
+TAG = os.environ.get("LOCO_TAG", "_norepeat")
 import numpy as np, pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -24,9 +10,6 @@ OUT = f"{HERE}/tune_baselines{TAG}"; os.makedirs(OUT, exist_ok=True)
 REPO = str(Path(__file__).resolve().parent.parent)
 N_TRIALS = {"Liu_RF": 40, "SISSO": 30, "Liu_MLP": 30, "JMI_Stacking": 25, "Jain_DNN": 20,
             "SciRep25_Transformer": 15, "LESets_GNN": 15, "Wu_gplearn_RFR": 15,
-            # Cranmer PySR with no physics template. One fit costs seconds to minutes, and the
-            # objective fits it once per inner split plus once for the test set, so the trial
-            # budget is deliberately small.
             "PySR_no_template": 18}
 B = None
 
@@ -73,9 +56,6 @@ def space(name, t):
     if name == "SISSO":
         return dict(k=t.suggest_int("k", 1, 3), icpt=t.suggest_categorical("icpt", [True, False]))
     if name == "PySR_no_template":
-        # the published baseline fixes the operator set and the search budget, so the candidate pool
-        # is built from independent random restarts instead. The seed is taken from the trial number
-        # so the restarts are distinct, matching how PT-SR draws one candidate per template x variant.
         return dict(seed=t.number)
 
 
@@ -138,8 +118,6 @@ def predict(name, p, Xtr, ytr, Xte, seed, elem):
         rf = RandomForestRegressor(n_estimators=300, max_depth=p["depth"], random_state=seed, n_jobs=1)
         return rf.fit(Xt, ytr).predict(Xe)
     if name == "PySR_no_template":
-        # Cranmer et al. (2023) PySR run with no template, same operator set and population
-        # settings as baselines/lodo_comparison/run.py
         from pysr import PySRRegressor
         m = PySRRegressor(niterations=30, binary_operators=["+", "-", "*", "/"],
                           unary_operators=["log", "exp", "sqrt", "square"], maxsize=15,
@@ -165,7 +143,6 @@ def predict(name, p, Xtr, ytr, Xte, seed, elem):
             c = np.abs(A.T @ res) / (np.linalg.norm(A, axis=0) * np.linalg.norm(res) + 1e-12); c[sel] = -1
             sel.append(int(c.argmax())); beta, *_ = np.linalg.lstsq(design(A, sel), ytr, rcond=None); res = ytr - design(A, sel) @ beta
         return design(E, sel) @ beta
-    # torch models
     import torch, torch.nn as nn
     torch.set_num_threads(1); torch.manual_seed(seed); np.random.seed(seed)
     n = len(Xtr); perm = np.random.RandomState(seed).permutation(n)
@@ -193,7 +170,6 @@ def predict(name, p, Xtr, ytr, Xte, seed, elem):
             model = TF(); f = model
         pr = train_torch(model, lambda: f(T["t"]), lambda: f(T["v"]), lambda: f(T["e"]), (y_t - ym) / ys, (y_v - ym) / ys, p, seed)
         return pr * ys + ym
-    # LESets GNN, graph construction as in run.py
     from torch_geometric.data import Data, Batch
     from torch_geometric.nn import CGConv
     from torch_geometric.utils import scatter

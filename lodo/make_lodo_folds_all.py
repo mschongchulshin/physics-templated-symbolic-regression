@@ -1,17 +1,3 @@
-"""LODO folds for every property in the Borg MPEA dataset, with the same rules as the yield strength folds.
-
-Properties: YS (verified rows, verified_V.pkl), and UTS, elongation, HV, density, modulus taken from the raw
-dataset (data/LODO_experimental_dataset.csv). The raw values are NOT yet checked against the original papers, only YS is.
-
-Rules, identical for every property:
-  cast material only, one alloy system per pool (element set S, or S with one element at zero)
-  exact repeats inside one paper (same composition, temperature, test type) are averaged into one row
-  fold = (pool, held-out paper); training rows that duplicate a test condition (composition within 1 at.%
-         total variation and temperature within 25 C) are removed, which is the leak the manuscript had
-  test >= 3 rows, train >= 5 rows and >= 3 compositions after the leak rows are removed
-Writes lodo_V_<prop>.pkl and lodo_folds_<prop>.pkl (yield strength keeps the names lodo_V.pkl, lodo_folds.pkl).
-usage: python make_lodo_folds_all.py
-"""
 from pathlib import Path
 import os, sys, re
 import numpy as np, pandas as pd

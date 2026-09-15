@@ -1,36 +1,18 @@
-"""PT-SR main implementation (src/run_sr_template.py settings) applied to the leave-one-paper-out folds.
-
-Faithful to the paper's main PT-SR:
-  PySR populations=40, population_size=60, turbo, bumper, niterations=200 (free_2stage stage 2: 300),
-  stage-1 maxsize 20 with unary square/cube/sqrt/log fitted on room-temperature rows only
-  (the MD code fits g on the 300 K rows), stage-2 maxsize 15 (free_1stage 25), same parsimony per template.
-Inputs: element fractions of the alloy system + S_mix, H_mix, delta, VEC, dChi, r_avg, chi_avg; T in K.
-
-Two variants per run:
-  original : repo guards (|g| floored at 1e-10)
-  guarded  : non-divergent version
-             |g| floored at 5% of median |y_train| (sign kept); y/g ratio clipped to [0.05, 20];
-             log-ratio clipped to [-5, 5]; final prediction clipped to [0, 2 x max(y_train)].
-             Stage 1 is shared; stage 2 is refit only where the floor changes its target.
-usage:  python ptsr_main_lodo.py launch N_WORKERS SEEDS   |   python ptsr_main_lodo.py worker K N SEEDS
-"""
 from pathlib import Path
 import os, sys, time, json, re, subprocess
 os.environ.setdefault("OMP_NUM_THREADS", "1"); os.environ.setdefault("JULIA_NUM_THREADS", "1")
-os.environ.setdefault("JULIA_NUM_GC_THREADS", "1")  # parallel GC segfaulted (gc_sweep_pool_parallel) in the first run
+os.environ.setdefault("JULIA_NUM_GC_THREADS", "1")
 import numpy as np, pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = str(Path(__file__).resolve().parent.parent)
-CONV = os.environ.get("PTSR_CONV") == "1"          # train until the loss converges; equation length unchanged
+CONV = os.environ.get("PTSR_CONV") == "1"
 STEP = int(os.environ.get("PTSR_STEP", "100")); MAXIT = int(os.environ.get("PTSR_MAXIT", "3000"))
 OUT = f"{HERE}/results_main" + ("_conv" if CONV else ""); TMP = f"{HERE}/_pysr_main_tmp"
 LAST_ITERS = []
 
 
 def fit_conv(m, X, y):
-    """Standard mode: one fit. Convergence mode: warm-started chunks of STEP iterations until the best
-    training loss improves by < 1 % in two consecutive chunks, or MAXIT iterations."""
     if not CONV:
         m.fit(X, y); LAST_ITERS.append(int(m.get_params()["niterations"])); return m
     m.set_params(niterations=STEP, warm_start=True)
@@ -86,9 +68,8 @@ def run_job(fid, tn, seed):
     rt = np.abs(Ttr - 298.15) <= 10
     tag = re.sub(r"[^A-Za-z0-9]", "", fid)[:40] + f"_{tn}_s{seed}"
 
-    # search budget per run, set by environment so the same code can do a wide sweep or the paper's full budget
     POPS = int(os.environ.get("PTSR_POPS", "40")); POPSIZE = int(os.environ.get("PTSR_POPSIZE", "60"))
-    NITER = int(os.environ.get("PTSR_NITER", "0"))          # 0 keeps each template's own iteration count
+    NITER = int(os.environ.get("PTSR_NITER", "0"))
 
     def pysr(name, **kw):
         base = dict(binary_operators=["+", "-", "*", "/"], unary_operators=["square", "cube", "sqrt", "log", "exp"],

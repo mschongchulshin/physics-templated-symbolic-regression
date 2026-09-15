@@ -1,19 +1,3 @@
-"""
-Inverse Design using SR equations.
-Given target properties, find optimal compositions using scipy.optimize.
-
-Key advantage of SR over black-box ML:
-  - Equations are differentiable → gradient-based optimization
-  - Equations are transparent → constraints naturally enforced
-  - Multi-objective optimization with Pareto front
-
-Scenarios:
-  1. Maximize Young's modulus at 300K
-  2. Maximize UTS at 300K
-  3. Maximize UTS while keeping FCC > 80%
-  4. Multi-objective: maximize UTS + minimize dislocation density
-  5. Scan: optimal composition at each temperature
-"""
 
 import pickle
 import os
@@ -27,7 +11,6 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 def _load_sheet(path, sheet_name):
-    """Rows for one temperature, from the flat corpus."""
     import pandas as _pd
     _t = int(str(sheet_name).rstrip("Kk"))
     _df = _pd.read_csv(path)
@@ -41,7 +24,6 @@ matplotlib.rcParams.update({
 })
 
 ROOT = Path(__file__).resolve().parent.parent
-# fitted stage-1 models, written by src/run_sr_template.py
 RESULTS_DIR = str(ROOT / "results" / "sr_results_full")
 INVERSE_DIR = str(ROOT / "results" / "generated" / "inverse_design")
 DATA_FILE = str(ROOT / "data" / "CoCrCuFeNi_684.csv")
@@ -63,7 +45,6 @@ TARGETS = {
     "BCC_20pct": "BCC 20%(%)",
 }
 
-# Composition constraints (from data)
 COMP_BOUNDS = {
     "Co": (20, 40),
     "Cr": (15, 25),
@@ -74,7 +55,6 @@ COMP_BOUNDS = {
 
 
 def load_models():
-    """Load all trained SR models."""
     models = {}
     for target_key in TARGETS:
         path = os.path.join(RESULTS_DIR, f"comp_{target_key}_model.pkl")
@@ -87,10 +67,6 @@ def load_models():
 
 
 def predict_property(models, target_key, composition, T):
-    """
-    Predict a property given composition and temperature.
-    composition: dict with Co, Cr, Cu, Fe, Ni values
-    """
     if target_key not in models:
         return None
 
@@ -106,19 +82,12 @@ def predict_property(models, target_key, composition, T):
 
 
 def composition_from_vector(x):
-    """Convert optimization vector [Co, Cr, Cu, Fe] → full composition.
-    Ni = 100 - sum(others) to enforce sum=100 constraint.
-    """
     Co, Cr, Cu, Fe = x
     Ni = 100 - Co - Cr - Cu - Fe
     return {"Co": Co, "Cr": Cr, "Cu": Cu, "Fe": Fe, "Ni": Ni}
 
 
-# ============================================================
-# Scenario 1: Maximize single property at given temperature
-# ============================================================
 def optimize_single_property(models, target_key, T, maximize=True):
-    """Find composition that maximizes/minimizes a single property."""
 
     def objective(x):
         comp = composition_from_vector(x)
@@ -136,7 +105,6 @@ def optimize_single_property(models, target_key, T, maximize=True):
         COMP_BOUNDS["Fe"],
     ]
 
-    # Constraint: Ni must be in valid range
     def ni_constraint_lower(x):
         return (100 - sum(x)) - COMP_BOUNDS["Ni"][0]
 
@@ -148,8 +116,6 @@ def optimize_single_property(models, target_key, T, maximize=True):
         {"type": "ineq", "fun": ni_constraint_upper},
     ]
 
-    # Use differential evolution (global optimizer)
-    # Ni = 100 - sum(x) must be in [COMP_BOUNDS["Ni"][0], COMP_BOUNDS["Ni"][1]]
     ni_lo, ni_hi = COMP_BOUNDS["Ni"]
     ni_nlc = NonlinearConstraint(lambda x: 100 - sum(x), ni_lo, ni_hi)
 
@@ -158,7 +124,6 @@ def optimize_single_property(models, target_key, T, maximize=True):
         constraints=(ni_nlc,),
     )
 
-    # Fallback: multiple random starts with L-BFGS-B
     best_result = result
     best_val = result.fun
 
@@ -170,7 +135,6 @@ def optimize_single_property(models, target_key, T, maximize=True):
             rng.uniform(*COMP_BOUNDS["Cu"]),
             rng.uniform(*COMP_BOUNDS["Fe"]),
         ]
-        # Ensure Ni in bounds
         Ni = 100 - sum(x0)
         if Ni < COMP_BOUNDS["Ni"][0] or Ni > COMP_BOUNDS["Ni"][1]:
             continue
@@ -196,18 +160,9 @@ def optimize_single_property(models, target_key, T, maximize=True):
     }
 
 
-# ============================================================
-# Scenario 2: Multi-objective optimization
-# ============================================================
 def optimize_multi_objective(models, objectives, T, n_points=200):
-    """
-    Multi-objective Pareto front via weighted scalarization.
-    objectives: list of (target_key, weight, maximize)
-    Returns Pareto front of compositions.
-    """
     pareto_points = []
 
-    # Scan weights
     weights = np.linspace(0, 1, n_points)
 
     for w in weights:
@@ -222,7 +177,6 @@ def optimize_multi_objective(models, objectives, T, n_points=200):
                 val = predict_property(models, target_key, comp, T)
                 if val is None:
                     return 1e10
-                # Normalize
                 sign = -1 if maximize else 1
                 if i == 0:
                     total += w * sign * val
@@ -281,15 +235,8 @@ def optimize_multi_objective(models, objectives, T, n_points=200):
     return pareto_points
 
 
-# ============================================================
-# Scenario 3: Constrained optimization
-# ============================================================
 def optimize_constrained(models, target_key, T, maximize=True,
                          property_constraints=None):
-    """
-    Optimize target_key subject to constraints on other properties.
-    property_constraints: list of (target_key, min_val, max_val)
-    """
     if property_constraints is None:
         property_constraints = []
 
@@ -303,7 +250,6 @@ def optimize_constrained(models, target_key, T, maximize=True,
         if val is None:
             return 1e10 if maximize else -1e10
 
-        # Penalty for constraint violations
         penalty = 0
         for ckey, cmin, cmax in property_constraints:
             cval = predict_property(models, ckey, comp, T)
@@ -357,7 +303,6 @@ def optimize_constrained(models, target_key, T, maximize=True,
 
     comp = composition_from_vector(best_x)
 
-    # Get all predicted properties
     all_props = {}
     for tk in TARGETS:
         val = predict_property(models, tk, comp, T)
@@ -373,11 +318,7 @@ def optimize_constrained(models, target_key, T, maximize=True,
     }
 
 
-# ============================================================
-# Scenario 4: Temperature scan
-# ============================================================
 def temperature_scan(models, target_key, T_range, maximize=True):
-    """Find optimal composition at each temperature."""
     results = []
     for T in T_range:
         res = optimize_single_property(models, target_key, T, maximize)
@@ -387,16 +328,7 @@ def temperature_scan(models, target_key, T_range, maximize=True):
     return results
 
 
-# ============================================================
-# MD Validation candidates
-# ============================================================
 def generate_md_candidates(models, n_candidates=10):
-    """
-    Generate novel compositions for MD validation.
-    Find compositions that are NOT in the training data
-    but predicted to have exceptional properties.
-    """
-    # Load training data compositions
     dfs = []
     for sheet, temp in TEMPS.items():
         df = _load_sheet(DATA_FILE, sheet)
@@ -411,13 +343,11 @@ def generate_md_candidates(models, n_candidates=10):
 
     candidates = []
 
-    # Scenario A: Max Young's modulus at 300K
     for T in [80, 300, 1100]:
         res = optimize_single_property(models, "Youngs_modulus", T, maximize=True)
         comp = res["composition"]
         comp_str = f"{comp['Co']:.0f}_{comp['Cr']:.0f}_{comp['Cu']:.0f}_{comp['Fe']:.0f}_{comp['Ni']:.0f}"
 
-        # Round to nearest 5% for practical alloy making
         comp_rounded = {k: round(v / 5) * 5 for k, v in comp.items()}
         if sum(comp_rounded.values()) != 100:
             comp_rounded["Fe"] += 100 - sum(comp_rounded.values())
@@ -437,7 +367,6 @@ def generate_md_candidates(models, n_candidates=10):
             "is_novel": comp_str not in existing_comps,
         })
 
-    # Scenario B: Max UTS at each temperature
     for T in [80, 300, 1100]:
         res = optimize_single_property(models, "UTS", T, maximize=True)
         comp = res["composition"]
@@ -459,7 +388,6 @@ def generate_md_candidates(models, n_candidates=10):
             "predicted_properties": all_props,
         })
 
-    # Scenario C: Max UTS with FCC > 60% at 300K
     res = optimize_constrained(
         models, "UTS", 300, maximize=True,
         property_constraints=[("FCC_20pct", 60, None)],
@@ -474,9 +402,6 @@ def generate_md_candidates(models, n_candidates=10):
     return candidates
 
 
-# ============================================================
-# Main
-# ============================================================
 if __name__ == "__main__":
     print("Loading SR models...")
     models = load_models()
@@ -484,7 +409,6 @@ if __name__ == "__main__":
 
     all_inverse = {}
 
-    # --- Single property optimization ---
     print(f"\n{'='*60}")
     print("SCENARIO 1: Single Property Optimization")
     print(f"{'='*60}")
@@ -497,7 +421,6 @@ if __name__ == "__main__":
             print(f"    Predicted: {res['predicted_value']:.4f}")
             all_inverse[f"max_{target_key}_{T}K"] = res
 
-    # --- Multi-objective ---
     print(f"\n{'='*60}")
     print("SCENARIO 2: Multi-Objective (UTS vs Disloc density)")
     print(f"{'='*60}")
@@ -505,8 +428,8 @@ if __name__ == "__main__":
     pareto = optimize_multi_objective(
         models,
         objectives=[
-            ("UTS", 1.0, True),           # maximize UTS
-            ("Disloc_0pct", 1.0, False),   # minimize dislocation density
+            ("UTS", 1.0, True),
+            ("Disloc_0pct", 1.0, False),
         ],
         T=300,
         n_points=50,
@@ -514,7 +437,6 @@ if __name__ == "__main__":
     all_inverse["pareto_UTS_vs_Disloc_300K"] = pareto
     print(f"  Generated {len(pareto)} Pareto points")
 
-    # --- Constrained ---
     print(f"\n{'='*60}")
     print("SCENARIO 3: Constrained Optimization")
     print(f"{'='*60}")
@@ -529,7 +451,6 @@ if __name__ == "__main__":
         print(f"    Properties: {res['all_properties']}")
         all_inverse["constrained_UTS_FCC60_300K"] = res
 
-    # --- Temperature scan ---
     print(f"\n{'='*60}")
     print("SCENARIO 4: Temperature Scan")
     print(f"{'='*60}")
@@ -538,7 +459,6 @@ if __name__ == "__main__":
     scan = temperature_scan(models, "UTS", T_range, maximize=True)
     all_inverse["temp_scan_UTS"] = scan
 
-    # --- MD validation candidates ---
     print(f"\n{'='*60}")
     print("SCENARIO 5: MD Validation Candidates")
     print(f"{'='*60}")
@@ -554,11 +474,9 @@ if __name__ == "__main__":
 
     all_inverse["md_candidates"] = candidates
 
-    # --- Save ---
     with open(os.path.join(INVERSE_DIR, "inverse_design_results.json"), "w") as f:
         json.dump(all_inverse, f, indent=2, default=str)
 
-    # --- Plot multi-objective Pareto ---
     if pareto:
         fig, ax = plt.subplots(figsize=(8, 6))
         uts_vals = [p["UTS"] for p in pareto]

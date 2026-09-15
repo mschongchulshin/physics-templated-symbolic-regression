@@ -1,10 +1,3 @@
-"""
-DL baselines with Optuna hyperparameter optimization
-13-feature set (Set A), fullfit (no CV)
-Optuna: internal 15% val split for HP search
-Final: train on ALL data, report train R² × 5 seeds
-Output: results/dl_optuna_results.json
-"""
 import pandas as pd
 import numpy as np
 import json, os, warnings
@@ -48,13 +41,11 @@ ALL_TARGETS = {
     "Other_0pct": "Other 0%(%)", "Other_20pct": "Other 20%(%)",
 }
 
-# Internal val split (fixed, last 15%)
 n_val = max(1, int(len(X) * 0.15))
 tr_idx = np.arange(len(X) - n_val)
 va_idx = np.arange(len(X) - n_val, len(X))
 
 
-# ── Model definitions ────────────────────────────────────────────────────────
 
 class DeepMLP(nn.Module):
     def __init__(self, n_feat, h1, h2, h3, dropout):
@@ -127,7 +118,6 @@ def train_model(model, X_tr, y_tr, X_va, y_va, lr, wd, epochs=500, patience=60):
 
 
 def train_fullfit(model, X_all, y_all, lr, wd, epochs=500):
-    """Train on full data, no early stopping."""
     model = model.to(device)
     opt = optim.AdamW(model.parameters(), lr=lr, weight_decay=wd)
     crit = nn.MSELoss()
@@ -223,7 +213,6 @@ for tkey, tcol in ALL_TARGETS.items():
         best_val_r2 = study.best_value
         print(f"  best val R²={best_val_r2:.4f}, params={best_params}")
 
-        # Final: train on ALL data, 5 seeds, report train R²
         scaler = StandardScaler()
         X_all = scaler.fit_transform(X.values)
 

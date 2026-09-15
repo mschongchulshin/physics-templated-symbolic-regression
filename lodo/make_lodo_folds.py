@@ -1,21 +1,3 @@
-"""LODO folds on the verified experimental data: hold out one paper of one alloy system.
-
-Source: verified_V.pkl, the 138 verified rows (47 papers checked against the original papers), cast material only.
-Repeats are not deleted globally here, that emptied the pools. Instead the leak is removed inside each fold:
-
-  fold = (alloy system S, processing, test type, held-out paper)
-  train = the same pool without that paper, MINUS every training row that duplicates a test condition
-          (composition within 1 at.% total variation and test temperature within 25 C), which is exactly the
-          leak the manuscript's evaluation had
-  conditions, fixed before any model runs:
-      test  >= 3 rows
-      train >= 5 rows and >= 3 compositions after the leak rows are removed
-  rows whose element set is S, or S with one element at zero, belong to the pool
-  exact repeats inside one paper (same composition, temperature, test type) are averaged into one row first
-
-Writes lodo_folds.pkl and prints the train/test table.
-usage: python make_lodo_folds.py
-"""
 import os, sys
 import numpy as np, pandas as pd
 
@@ -24,17 +6,10 @@ sys.path.insert(0, HERE)
 MIN_TEST, MIN_TRAIN, MIN_TRAIN_COMPS = 3, 5, 3
 
 
-SPREAD = 0.30      # independent measurements of one condition may differ by at most 30 % of their mean
+SPREAD = 0.30
 
 
 def conflicting(V, verbose=False):
-    """Row ids of conditions measured by more than one paper where the values disagree badly.
-
-    Rows of the same composition (1 at.%) and the same test type whose temperatures are within 25 C form one
-    condition. If two papers measured it and the values span more than SPREAD of their mean, the whole condition
-    is dropped as unreliable. Agreeing repeats are kept, they are real reproduced measurements and dropping them
-    would only make the task artificially harder.
-    """
     bad = []
     for (ck, tt), g in V.groupby([V.ck.map(str), V.test_type]):
         g = g.sort_values("T_i")
@@ -68,7 +43,6 @@ def load(verbose=False):
     V = V[V.processing == "CAST"].copy()
     V["ck"] = V.vec.apply(lambda v: tuple(sorted((k, round(100 * x)) for k, x in v.items())))
     V["T_i"] = V["T"].round().astype(int)
-    # average exact repeats inside one paper
     g = V.groupby([V.lab_name, V.ck.map(str), V.T_i, V.test_type], as_index=False)
     V = g.apply(lambda d: d.assign(YS_MPa=d.YS_MPa.mean()).iloc[:1], include_groups=True).reset_index(drop=True)
     V["els"] = V.vec.apply(frozenset)
@@ -97,14 +71,12 @@ def folds(V):
                 continue
             for lab in sorted(G.lab_name.unique()):
                 te = G[G.lab_name == lab]; tr = G[G.lab_name != lab]
-                leak = []      # nothing is dropped per fold any more, see conflicting() for the data quality rule
+                leak = []
 
                 why = []
                 if len(te) < MIN_TEST: why.append(f"test<{MIN_TEST}")
                 if len(tr) < MIN_TRAIN: why.append(f"train<{MIN_TRAIN}")
                 if tr.ck.nunique() < MIN_TRAIN_COMPS: why.append(f"train_comps<{MIN_TRAIN_COMPS}")
-                # selection inside the fold holds one training paper out, so a single training paper makes the
-                # fold unscorable: every model and template gets an undefined inner error
                 if tr.lab_name.nunique() < 2: why.append("train_papers<2")
                 out.append(dict(fold_id=f"{pool}||{lab}", pool=pool, S=S, proc=proc, tt=tt, held_out=lab,
                                 train=tr.index.tolist(), test=te.index.tolist(), n_train=len(tr), n_test=len(te),

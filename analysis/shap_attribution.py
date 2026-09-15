@@ -1,10 +1,3 @@
-"""Reproducible TreeSHAP for the UTS GBR surrogate (composition-only, 300 K).
-Extends compute_shap_uts.py to save BOTH signed and absolute SHAP, so + and - effects
-can be checked (beeswarm/signed-mean possible).
-Outputs:
-  shap_uts_300K_signed_mean.csv  : feature, mean_SHAP (signed), mean_abs_SHAP, rank
-  shap_uts_300K_matrix.csv       : full per-sample SHAP matrix (rows=samples, cols=features) + X values
-"""
 import numpy as np, pandas as pd, warnings; warnings.filterwarnings("ignore")
 from sklearn.ensemble import GradientBoostingRegressor
 import shap
@@ -23,7 +16,7 @@ assert len(f300)==len(d)
 X=pd.concat([d[[f"{e}(%)" for e in ELE]].rename(columns={f"{e}(%)":e for e in ELE}),f300[stat]],axis=1)
 y=d["UTS(Gpa)"].values
 gbr=GradientBoostingRegressor(random_state=0).fit(X,y)
-sv=shap.TreeExplainer(gbr).shap_values(X)   # (n_samples, n_features) signed
+sv=shap.TreeExplainer(gbr).shap_values(X)
 
 mean_signed=pd.Series(sv.mean(0),index=X.columns)
 mean_abs=pd.Series(np.abs(sv).mean(0),index=X.columns)
@@ -34,7 +27,6 @@ out=out.sort_values("mean_abs_SHAP",ascending=False).reset_index(drop=True)
 out["rank"]=range(1,len(out)+1)
 out.to_csv(OUTDIR / "shap_uts_300K_signed_mean.csv",index=False)
 
-# full matrix (signed) + the feature values, for beeswarm
 M=pd.DataFrame(sv,columns=[f"SHAP_{c}" for c in X.columns])
 MX=pd.concat([X.reset_index(drop=True).add_prefix("x_"),M],axis=1)
 MX.to_csv(OUTDIR / "shap_uts_300K_matrix.csv",index=False)

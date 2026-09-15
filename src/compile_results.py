@@ -28,9 +28,7 @@ DL_OPTUNA_MODELS = ["DeepMLP", "TabularTransformer", "AttentionMLP"]
 ML_CV_OPTUNA_MODELS = ["RandomForest", "GradientBoosting", "XGBoost", "SVR", "Ridge", "Lasso", "MLP"]
 DL_CV_OPTUNA_MODELS = ["DeepMLP", "TabularTransformer", "AttentionMLP"]
 
-# Column labels: s0_f0 … s4_f4
 SF_COLS = [f"s{s}_f{f}" for s in SEEDS for f in FOLDS]
-# Seed-only columns (for fullfit results, no folds)
 S_COLS = [f"s{s}" for s in SEEDS]
 
 def load_json(path):
@@ -44,13 +42,10 @@ def mean_std(vals):
     return float(np.mean(arr)), float(np.std(arr))
 
 def flat_vals(seed_fold_dict):
-    """seed_fold_dict[s][f] → ordered list [s0f0,s0f1,...,s4f4]"""
     return [seed_fold_dict.get(s, {}).get(f, None) for s in SEEDS for f in FOLDS]
 
-# ── 1. ML Baselines ──────────────────────────────────────────────────────────
 
 print("Loading ML baselines...")
-# ml_data[tgt][model][seed] = [f0,f1,f2,f3,f4]
 ml_data = {}
 for s in SEEDS:
     path = str(RES / f"ml_baseline_results_s{s}.json")
@@ -63,10 +58,8 @@ for s in SEEDS:
         for m in ML_MODELS:
             ml_data[tgt][m][s] = d[tgt][m]["fold_r2s"]
 
-# ── 2. GPR ───────────────────────────────────────────────────────────────────
 
 print("Loading GPR...")
-# gpr_data[tgt][seed] = [f0..f4]
 gpr_data = {}
 for s in SEEDS:
     path = str(RES / f"gpr_results_s{s}.json")
@@ -78,10 +71,8 @@ for s in SEEDS:
         gpr_data.setdefault(tgt, {})
         gpr_data[tgt][s] = d[tgt]["fold_r2s"]
 
-# ── 3. DL Models ─────────────────────────────────────────────────────────────
 
 print("Loading DL models...")
-# dl_data[tgt][model][seed] = [f0..f4]
 dl_data = {}
 for s in SEEDS:
     path = str(RES / f"deep_model_results_s{s}.json")
@@ -94,15 +85,13 @@ for s in SEEDS:
         for m in DL_MODELS:
             dl_data[tgt][m][s] = d[tgt][m]["fold_r2s"]
 
-# ── 4. 9-template SR ─────────────────────────────────────────────────────────
 
 print("Loading 9-template SR...")
 
-CV = RES / "cv_results"   # checkpoint_*.json is gitignored; CSVs ship instead
+CV = RES / "cv_results"
 
 
 def load_runs(csv_name, stem, has_template):
-    """Load runs from the deposited CSV, or the checkpoints if present."""
     csv_path = CV / csv_name
     rows = []
     if csv_path.exists():
@@ -137,26 +126,20 @@ def load_runs(csv_name, stem, has_template):
     return rows, nested
 
 
-# sr9_data[tmpl][tgt][seed][fold] = r2
 sr9_raw, sr9_data = load_runs("sr_9templates_raw.csv", "checkpoint", True)
 
-# ── 5. Freeform SR ───────────────────────────────────────────────────────────
 
 print("Loading Freeform SR...")
-# ff_data[tgt][seed][fold] = r2
 ff_raw, ff_data = load_runs("sr_freeform.csv", "checkpoint_freeform", False)
 
-# ── 6. 6-feat control SR ─────────────────────────────────────────────────────
 
 print("Loading 6-feat control SR...")
 sf6_raw, sf6_data = load_runs("sr_6feat_control.csv", "checkpoint_6feat", False)
 
-# ── 7. Shuffled-y ─────────────────────────────────────────────────────────────
 
 print("Loading Shuffled-y...")
 shuf_raw, shuf_data = load_runs("shuffled_y_raw.csv", "checkpoint_shuffled", True)
 
-# ── 8. ML Optuna fullfit ─────────────────────────────────────────────────────
 
 print("Loading ML Optuna fullfit...")
 ml_optuna_data = {}
@@ -171,7 +154,6 @@ if os.path.exists(ml_opt_path):
 else:
     print(f"  MISSING: {ml_opt_path}")
 
-# ── 9. DL Optuna fullfit ──────────────────────────────────────────────────────
 
 print("Loading DL Optuna fullfit...")
 dl_optuna_data = {}
@@ -186,7 +168,6 @@ if os.path.exists(dl_opt_path):
 else:
     print(f"  MISSING: {dl_opt_path}")
 
-# ── 10. ML Optuna CV ──────────────────────────────────────────────────────────
 
 print("Loading ML Optuna CV...")
 ml_cv_optuna_data = {}
@@ -201,7 +182,6 @@ if os.path.exists(ml_cv_path):
 else:
     print(f"  MISSING: {ml_cv_path}")
 
-# ── 11. DL Optuna CV ──────────────────────────────────────────────────────────
 
 print("Loading DL Optuna CV...")
 dl_cv_optuna_data = {}
@@ -216,13 +196,11 @@ if os.path.exists(dl_cv_path):
 else:
     print(f"  MISSING: {dl_cv_path}")
 
-# ── BUILD EXCEL ───────────────────────────────────────────────────────────────
 
 print(f"\nWriting Excel to {OUT} ...")
 writer = pd.ExcelWriter(OUT, engine="xlsxwriter")
 wb = writer.book
 
-# ── Sheet 0: README ──────────────────────────────────────────────────────────
 
 ws = wb.add_worksheet("README")
 info = [
@@ -254,7 +232,6 @@ for r, (k, v) in enumerate(info):
 ws.set_column(0, 0, 25)
 ws.set_column(1, 1, 90)
 
-# ── Sheet 1: Model Comparison ────────────────────────────────────────────────
 
 rows = []
 for m in ML_MODELS:
@@ -330,7 +307,6 @@ df_cmp = pd.DataFrame(rows)[["Model", "Type", "Overall_mean"] + TARGETS]
 df_cmp.to_excel(writer, sheet_name="Model_Comparison", index=False)
 print("  ✓ Model_Comparison")
 
-# ── Sheet 2: ML Baselines ────────────────────────────────────────────────────
 
 ml_rows = []
 for m in ML_MODELS:
@@ -347,7 +323,6 @@ pd.DataFrame(ml_rows)[["Model", "Target", "mean_R2", "std_R2"] + SF_COLS].to_exc
     writer, sheet_name="ML_Baselines", index=False)
 print("  ✓ ML_Baselines")
 
-# ── Sheet 3: GPR ─────────────────────────────────────────────────────────────
 
 gpr_rows = []
 for tgt in TARGETS:
@@ -363,7 +338,6 @@ pd.DataFrame(gpr_rows)[["Target", "mean_R2", "std_R2"] + SF_COLS].to_excel(
     writer, sheet_name="GPR", index=False)
 print("  ✓ GPR")
 
-# ── Sheet 4: DL Models ───────────────────────────────────────────────────────
 
 dl_rows = []
 for m in DL_MODELS:
@@ -380,7 +354,6 @@ pd.DataFrame(dl_rows)[["Model", "Target", "mean_R2", "std_R2"] + SF_COLS].to_exc
     writer, sheet_name="DL_Models", index=False)
 print("  ✓ DL_Models")
 
-# ── Sheet 5: SR 9-templates Summary ─────────────────────────────────────────
 
 sr9_sum_rows = []
 for tmpl in TEMPLATES:
@@ -397,14 +370,12 @@ pd.DataFrame(sr9_sum_rows)[["Template", "Target", "mean_R2", "std_R2"] + SF_COLS
     writer, sheet_name="SR_9templates_Summary", index=False)
 print("  ✓ SR_9templates_Summary")
 
-# ── Sheet 6: SR 9-templates Raw ──────────────────────────────────────────────
 
 df_sr9_raw = pd.DataFrame(sr9_raw)[["seed", "template", "target", "fold", "r2", "time_s"]]
 df_sr9_raw.sort_values(["seed", "template", "target", "fold"]).reset_index(drop=True).to_excel(
     writer, sheet_name="SR_9templates_Raw", index=False)
 print("  ✓ SR_9templates_Raw")
 
-# ── Sheet 7: Freeform SR ─────────────────────────────────────────────────────
 
 ff_rows = []
 for tgt in TARGETS:
@@ -420,7 +391,6 @@ pd.DataFrame(ff_rows)[["Target", "mean_R2", "std_R2"] + SF_COLS].to_excel(
     writer, sheet_name="SR_Freeform", index=False)
 print("  ✓ SR_Freeform")
 
-# ── Sheet 8: 6-feat control SR ───────────────────────────────────────────────
 
 sf6_rows = []
 for tgt in TARGETS:
@@ -436,7 +406,6 @@ pd.DataFrame(sf6_rows)[["Target", "mean_R2", "std_R2"] + SF_COLS].to_excel(
     writer, sheet_name="SR_6feat_Control", index=False)
 print("  ✓ SR_6feat_Control")
 
-# ── Sheet 9: Shuffled-y Summary ──────────────────────────────────────────────
 
 shuf_sum_rows = []
 for tmpl in TEMPLATES:
@@ -455,14 +424,12 @@ for tmpl in TEMPLATES:
 pd.DataFrame(shuf_sum_rows).to_excel(writer, sheet_name="Shuffled_y_Summary", index=False)
 print("  ✓ Shuffled_y_Summary")
 
-# ── Sheet 10: Shuffled-y Raw ─────────────────────────────────────────────────
 
 df_shuf_raw = pd.DataFrame(shuf_raw)[["seed", "template", "target", "fold", "r2"]]
 df_shuf_raw.sort_values(["seed", "template", "target", "fold"]).reset_index(drop=True).to_excel(
     writer, sheet_name="Shuffled_y_Raw", index=False)
 print("  ✓ Shuffled_y_Raw")
 
-# ── Sheet 11: ML Optuna fullfit ───────────────────────────────────────────────
 
 if ml_optuna_data:
     ml_opt_rows = []
@@ -484,7 +451,6 @@ if ml_optuna_data:
         writer, sheet_name="ML_Optuna_Fullfit", index=False)
     print("  ✓ ML_Optuna_Fullfit")
 
-# ── Sheet 12: DL Optuna fullfit ───────────────────────────────────────────────
 
 if dl_optuna_data:
     dl_opt_rows = []
@@ -506,7 +472,6 @@ if dl_optuna_data:
         writer, sheet_name="DL_Optuna_Fullfit", index=False)
     print("  ✓ DL_Optuna_Fullfit")
 
-# ── Sheet 13: ML Baselines Optuna CV ─────────────────────────────────────────
 
 if ml_cv_optuna_data:
     ml_cv_rows = []
@@ -525,7 +490,6 @@ if ml_cv_optuna_data:
         writer, sheet_name="ML_Baselines_Optuna", index=False)
     print("  ✓ ML_Baselines_Optuna")
 
-# ── Sheet 14: DL Models Optuna CV ────────────────────────────────────────────
 
 if dl_cv_optuna_data:
     dl_cv_rows = []
@@ -548,7 +512,6 @@ writer.close()
 print(f"\n✅ Done! Saved to {OUT}")
 print(f"   File size: {os.path.getsize(OUT)/1024:.0f} KB")
 
-# ── Quick summary ────────────────────────────────────────────────────────────
 
 print("\n" + "="*60)
 print("QUICK SUMMARY (mean R² across all 12 targets)")

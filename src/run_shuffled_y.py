@@ -1,8 +1,3 @@
-"""
-Shuffled-y permutation test with 13-feature set
-Usage: python3 src/run_shuffled_y.py <seed_start> <seed_end>
-seed=0: shuffle seed. Runs all 9 templates × 12 targets × 5 folds × N seeds
-"""
 import pandas as pd, numpy as np, json, os, time, threading, sys
 from pathlib import Path
 from pysr import PySRRegressor
@@ -79,7 +74,6 @@ for tkey, tcol in ALL_TARGETS.items():
                 rk = f"{tkey}__{tn}__f{fold}__s{seed}__shuffled"
                 if rk in completed:
                     continue
-                # Shuffle y within training set using seed
                 rng = np.random.RandomState(seed * 1000 + fold)
                 y_shuffled = y_real.copy()
                 y_shuffled[tri] = rng.permutation(y_real[tri])
@@ -92,8 +86,6 @@ for tkey, tcol in ALL_TARGETS.items():
                     tmpdir = str(TMP_DIR / f"shuf_{tkey}_{tn}_f{fold}_s{seed}")
                     os.makedirs(tmpdir, exist_ok=True)
 
-                    # Use same template logic as run_9templates_13feat.py
-                    # Import the core fitting logic inline (simplified)
                     if tn == 'free_1stage':
                         from pysr import PySRRegressor as PSR
                         m = PSR(niterations=200, binary_operators=["+","-","*","/"],
@@ -106,7 +98,6 @@ for tkey, tcol in ALL_TARGETS.items():
                         m.fit(X_full.iloc[tri], y_shuffled[tri])
                         pred = m.predict(X_full.iloc[tei])
                     else:
-                        # Two-stage: Stage1 on 300K shuffled
                         td1 = tmpdir + "/g"; os.makedirs(td1, exist_ok=True)
                         gm = PySRRegressor(niterations=200, binary_operators=["+","-","*","/"],
                                 unary_operators=["square","cube","sqrt","log"],

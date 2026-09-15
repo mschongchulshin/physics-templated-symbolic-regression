@@ -1,18 +1,3 @@
-"""
-Step 2: Common feature builder used by ALL methods (PT-SR + 9 baselines).
-
-For a fold (composition, processing, property, test_source):
-  - Filter MPEA rows for elem_set + processing + non-null y
-  - For each row, compute features:
-      * element fractions (sorted alphabetic, length = #elements in comp system)
-      * Hume-Rothery: S_mix, dH_mix, delta, VEC, dChi (+ r_avg, chi_avg)
-      * T (Kelvin)
-  - Split: rows from test_source -> test, others -> train
-  - Returns dict with X_train, y_train, X_test, y_test, T_train, T_test,
-    elem_order, formulas_train, formulas_test
-
-NOTE: PT-SR also needs `inv_T = 1/T` and `S_mix` — they are part of features.
-"""
 from pathlib import Path
 import os
 import re
@@ -22,7 +7,6 @@ import pandas as pd
 BASE = str(Path(__file__).resolve().parent.parent)
 OUT = f"{BASE}/results/generated/lodo_v2"
 
-# ---- Element properties (Miedema) - copied from baselines/lodo_comparison/run.py ----
 ELEM_R = {
     'Al': 143.0, 'Co': 125.0, 'Cr': 128.0, 'Cu': 128.0, 'Fe': 126.0,
     'Hf': 159.0, 'Li': 152.0, 'Mg': 160.0, 'Mn': 127.0, 'Mo': 139.0,
@@ -123,12 +107,10 @@ PROP_COL = {
 
 
 def load_mpea():
-    """Load preprocessed MPEA cache (or original if not present)."""
     cache = f"{OUT}/mpea_preprocessed.csv"
     if os.path.exists(cache):
         df = pd.read_csv(cache)
         return df
-    # fallback
     df = pd.read_csv(f"{BASE}/data/LODO_experimental_dataset.csv")
     df["_parsed"] = df["FORMULA"].apply(parse_formula)
     df["_elem_set"] = df["_parsed"].apply(
@@ -138,10 +120,6 @@ def load_mpea():
 
 
 def build_fold(comp, processing, prop, test_source, mpea):
-    """Build train/test feature arrays for a fold.
-
-    Returns dict with all features OR None if fold not buildable.
-    """
     elem_order = sorted(set(re.findall(r"[A-Z][a-z]?", comp)))
     elem_set = "".join(elem_order)
     ycol = PROP_COL[prop]
@@ -172,7 +150,6 @@ def build_fold(comp, processing, prop, test_source, mpea):
         x = amts / s
         s_mix, h_mix, delta, vec, dchi, r_avg, chi_avg = hume_rothery_features(elem_order, x)
         T_k = float(row["_T_K"])
-        # feature order: [x_e1, x_e2, ..., x_eN, s_mix, h_mix, delta, vec, dchi, r_avg, chi_avg, T]
         feat = list(x) + [s_mix, h_mix, delta, vec, dchi, r_avg, chi_avg, T_k]
         feats_full.append(feat)
         ys.append(float(row[ycol]))
@@ -218,7 +195,6 @@ def build_fold(comp, processing, prop, test_source, mpea):
 
 
 if __name__ == "__main__":
-    # smoke test
     mpea = load_mpea()
     folds = pd.read_csv(f"{OUT}/folds.csv")
     ok = folds[folds["status"].str.startswith("ok")]
@@ -228,7 +204,6 @@ if __name__ == "__main__":
         if d is None:
             print(f"  {r['fold_id']}: FAILED")
             continue
-        # sanity check
         assert d["X_train"].shape[1] == d["n_elem"] + 8
         assert d["X_train"].shape[0] == r["n_train"], f"n_train mismatch: {d['X_train'].shape[0]} vs {r['n_train']}"
         assert d["X_test"].shape[0] == r["n_test"], f"n_test mismatch: {d['X_test'].shape[0]} vs {r['n_test']}"

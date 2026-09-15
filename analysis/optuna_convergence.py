@@ -57,7 +57,6 @@ SEED = 0
 N_ML = 50
 N_DL = 30
 
-# ── ML ──────────────────────────────────────────────────────────────────────
 ML_MODELS = ["RandomForest","GradientBoosting","XGBoost","SVR","Ridge","Lasso","MLP"]
 ML_COLORS = ["#2196F3","#FF9800","#9C27B0","#4CAF50","#F44336","#00BCD4","#795548"]
 
@@ -101,7 +100,6 @@ def make_ml(name, trial):
             learning_rate_init=trial.suggest_float("lr",1e-4,1e-2,log=True),
             max_iter=2000,random_state=SEED,early_stopping=True,n_iter_no_change=20))])
 
-# ── DL ──────────────────────────────────────────────────────────────────────
 class DeepMLP(nn.Module):
     def __init__(self,n,h1,h2,h3,dr):
         super().__init__()
@@ -175,7 +173,6 @@ def make_dl(name, trial):
             trial.suggest_float("lr",1e-4,1e-2,log=True), \
             trial.suggest_float("wd",1e-5,1e-2,log=True)
 
-# ── Run ──────────────────────────────────────────────────────────────────────
 ml_conv = {m:{tk:[] for tk in ALL_TARGETS} for m in ML_MODELS}
 dl_conv = {m:{tk:[] for tk in ALL_TARGETS} for m in DL_MODELS}
 
@@ -223,12 +220,10 @@ for i, (tkey, tcol) in enumerate(ALL_TARGETS.items()):
         dl_conv[mname][tkey] = hist
         print(f"  DL {mname}: {bv[0]:.4f} ({len(hist)} trials)", flush=True)
 
-# Save raw data
 with open(OUTDIR / "optuna_conv_data.json","w") as f:
     json.dump({"ml": ml_conv, "dl": dl_conv}, f)
 print(f"\nData saved to {OUTDIR / 'optuna_conv_data.json'}")
 
-# ── Plot ──────────────────────────────────────────────────────────────────────
 tlist = list(ALL_TARGETS.keys())
 nrows, ncols = 3, 4
 

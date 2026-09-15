@@ -1,7 +1,3 @@
-"""
-GPR baseline with 13-feature set (Set A), 5 seeds × 5-fold CV
-Outputs: results/gpr_results.json
-"""
 import pandas as pd
 import numpy as np
 from pathlib import Path

@@ -1,8 +1,3 @@
-"""
-SR sensitivity final plots.
-Run after all workers complete.
-Outputs SVG (editable text), PNG and source CSVs to results/generated/
-"""
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -17,7 +12,6 @@ from pathlib import Path
 OUT = OUTDIR / "sr_sens_out"
 OUT.mkdir(exist_ok=True)
 
-# ── Merge all worker CSVs ─────────────────────────────────────────────────────
 dfs = []
 for i in range(5):
     p = OUTDIR / f"sr_sens_w{i}.csv"
@@ -40,12 +34,10 @@ TWO_STAGE = ["additive","multiplicative","thermal_softening","arrhenius",
 SINGLE_STAGE = ["free_1stage","freeform","6feat_control"]
 ALL_TEMPLATES = TWO_STAGE + SINGLE_STAGE
 
-# Color palette
 import matplotlib.cm as cm
 cmap = cm.get_cmap("tab10")
 COLORS = {t: cmap(i % 10) for i, t in enumerate(ALL_TEMPLATES)}
 
-# ── Fig 1: Parsimony sensitivity ──────────────────────────────────────────────
 pars_df = df[df["experiment"] == "parsimony"].copy()
 
 fig, axes = plt.subplots(3, 4, figsize=(18, 12), sharey=False)
@@ -74,10 +66,8 @@ fig.savefig(OUT / "S_parsimony.png", dpi=180, bbox_inches="tight")
 plt.close()
 print("S_parsimony done.")
 
-# Source CSV
 pars_df.to_csv(OUT / "S_parsimony_source.csv", index=False)
 
-# ── Fig 2: niterations convergence ────────────────────────────────────────────
 niter_df = df[df["experiment"] == "niterations"].copy()
 
 fig, axes = plt.subplots(3, 4, figsize=(18, 12), sharey=False)

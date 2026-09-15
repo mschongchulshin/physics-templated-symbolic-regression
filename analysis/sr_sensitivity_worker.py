@@ -154,7 +154,6 @@ def make_pysr(niterations, maxsize, parsimony, tmpdir):
         random_state=SEED, temp_equation_file=True, tempdir=tmpdir,
     )
 
-# ── Build job list ─────────────────────────────────────────────────────────
 all_templates = list(TWO_STAGE.keys()) + list(SINGLE_STAGE.keys())
 jobs = []
 for tmpl in all_templates:
@@ -165,10 +164,8 @@ for tmpl in all_templates:
         for n in NITER_VALS:
             jobs.append(("niterations", tmpl, tkey, cfg["parsimony"], n, cfg["maxsize"]))
 
-# Filter to this worker's jobs
 my_jobs = [j for i, j in enumerate(jobs) if i % N_WORKERS == WORKER_ID]
 
-# Skip already done
 done_keys = set()
 if OUT_CSV.exists():
     done_df = pd.read_csv(OUT_CSV)

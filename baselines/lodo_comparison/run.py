@@ -1,62 +1,3 @@
-"""
-Baseline fitters shared by the leave-one-paper-out workflow.
-
-This file defines one fit_predict_* function per published baseline.
-lodo/baselines_lodo.py imports them and drives the evaluation over
-the leave-one-paper-out folds.
-
-Each is our own implementation, written from the published
-description. Sources are listed below.
-
-Smooth class:
-  2. Liu MLP (npj 2024)      -- 3-layer MLP regressor
-  3. PySR no-template        -- standard SR (free_1stage), seeds 0..4
-  4. SciRep25 Transformer    -- per-feature token Transformer
-  5. Jain 2026 DNN           -- 3 hidden x 128 units, ReLU, dropout 0.2
-  6. LESets GNN (simplified) -- composition-graph GNN (CGConv)
-  7. SISSO                   -- linear regression on combinatorial feature pool
-
-Tree class:
-  8. Liu RF (npj 2024)       -- RandomForestRegressor
-  9. Wu gplearn+RFR (JMI)    -- gplearn SymbolicTransformer + RFR
-  10. JMI Stacking           -- ERT + HistGBR + Lasso meta
-
-Sources for the methods implemented here:
-  Liu MLP, Liu RF     Liu, X. et al. Machine learning-based glass formation
-                      prediction, npj Comput. Mater. 10, 4 (2024).
-  Wu gplearn+RFR      Wu, Y. et al. J. Mater. Inf. 4, 21 (2024). Uses gplearn
-                      SymbolicTransformer (Stephens, T., gplearn 0.4.3,
-                      https://github.com/trevorstephens/gplearn, BSD-3-Clause).
-  JMI Stacking        J. Mater. Inf. 4 (2024), ExtraTrees + HistGradientBoosting
-                      + Lasso meta-learner.
-  PySR no-template    Cranmer, M. Interpretable machine learning for science
-                      with PySR and SymbolicRegression.jl, arXiv:2305.01582
-                      (2023). Apache-2.0.
-  SISSO               Ouyang, R. et al. Phys. Rev. Materials 2, 083802 (2018).
-  SciRep25            Korkmaz, S. et al. Sci. Rep. 15 (2025),
-                      https://www.nature.com/articles/s41598-025-95170-z
-  Jain 2026 DNN       Proc. IMechE Part C, DOI 10.1177/09544062251414915
-  LESets GNN          Zhang et al. arXiv:2408.16337,
-                      https://github.com/Henrium/LESets
-
-All implementations here are our own, written from the published descriptions.
-No source code was copied from the repositories above.
-
-Features (uniform across all baselines, MPEA-compatible):
-  - Element fractions for the composition system's elements (variable dim)
-  - Hume-Rothery: S_mix, dH_mix (Miedema/Takeuchi-Inoue), delta, VEC, dChi
-  - T (Kelvin)
-We pad/standardise per-fold so the per-system feature dim is consistent within
-the fold (train and test always share the same element set since LODO is
-per-composition).
-
-Stochastic models use seeds 0..4. Deterministic models (RF, SISSO) use seed=0.
-
-Output:
-  - results.json : {baseline: {fold_id: {R2, MAE, RMSE, n_train, n_test},
-                                median_R2, mean_R2, std_R2}}
-  - summary.md   : table of all baselines x all folds (R^2)
-"""
 
 import json
 import os
@@ -65,7 +6,6 @@ import time
 import warnings
 from pathlib import Path
 
-# Threading control before scientific imports
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 os.environ.setdefault("MKL_NUM_THREADS", "2")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "2")
@@ -85,9 +25,6 @@ from sklearn.preprocessing import StandardScaler
 
 warnings.filterwarnings("ignore")
 
-# ============================================================
-# Paths
-# ============================================================
 BASE = str(Path(__file__).resolve().parent.parent.parent)
 OUT_DIR = Path(f"{BASE}/results/generated/lodo_comparison")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -100,9 +37,6 @@ MPEA_PATH = f"{BASE}/data/LODO_experimental_dataset.csv"
 SEEDS = [0, 1, 2, 3, 4]
 
 
-# ============================================================
-# Logging
-# ============================================================
 def log(msg, also_print=True):
     line = f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}"
     with open(LOG_PATH, "a") as f:
@@ -111,11 +45,6 @@ def log(msg, also_print=True):
         print(line, flush=True)
 
 
-# ============================================================
-# 1. Element properties (Miedema/literature)
-# ============================================================
-# Atomic radius (pm), Pauling electronegativity, VEC.
-# Covers all elements in the LODO composition systems.
 ELEM_R = {
     'Al': 143.0, 'Co': 125.0, 'Cr': 128.0, 'Cu': 128.0, 'Fe': 126.0,
     'Hf': 159.0, 'Li': 152.0, 'Mg': 160.0, 'Mn': 127.0, 'Mo': 139.0,
@@ -134,8 +63,6 @@ ELEM_VEC = {
     'Nb': 5, 'Ni': 10, 'Re': 7, 'Si': 4, 'Ta': 5,
     'Ti': 4, 'V':  5, 'W':  6, 'Zr': 4,
 }
-# Miedema-style binary mixing enthalpy (kJ/mol), Takeuchi & Inoue 2005 +
-# extensions; missing pairs default to 0.
 OMEGA = {
     ('Al','Co'):-19,('Al','Cr'):-10,('Al','Cu'):-1,('Al','Fe'):-11,('Al','Hf'):-39,
     ('Al','Mg'):-2,('Al','Mn'):-19,('Al','Mo'):-5,('Al','Nb'):-18,('Al','Ni'):-22,
@@ -181,16 +108,15 @@ def _omega(a, b):
 
 
 def hume_rothery_features(elements, fractions):
-    """Compute (S_mix, dH_mix, delta, VEC, dChi, r_avg, chi_avg)."""
     x = np.asarray(fractions, dtype=float)
     p = np.clip(x, 1e-12, 1.0)
-    s_mix = -R_GAS * np.sum(p * np.log(p))  # J/(mol K)
+    s_mix = -R_GAS * np.sum(p * np.log(p))
 
     h = 0.0
     for i, ei in enumerate(elements):
         for j in range(i + 1, len(elements)):
             h += 4.0 * _omega(ei, elements[j]) * x[i] * x[j]
-    h_mix = h  # kJ/mol
+    h_mix = h
 
     r = np.array([ELEM_R.get(e, 130.0) for e in elements])
     r_avg = float(np.dot(x, r))
@@ -206,9 +132,6 @@ def hume_rothery_features(elements, fractions):
     return s_mix, h_mix, delta, vec, dchi, r_avg, chi_avg
 
 
-# ============================================================
-# 2. MPEA dataset loader and source mapping
-# ============================================================
 def parse_formula(formula):
     if pd.isna(formula):
         return None
@@ -245,14 +168,8 @@ PROP_COL = {
 log(f"MPEA rows: {len(df_mpea)}")
 log(f"Processing counts: {df_mpea['PROPERTY: Processing method'].value_counts().to_dict()}")
 
-# ============================================================
-# 4. Per-fold feature builder
-# ============================================================
 
 
-# ============================================================
-# 5. Baseline definitions
-# ============================================================
 def safe_metrics(y_true, y_pred):
     y_true = np.asarray(y_true, dtype=float)
     y_pred = np.asarray(y_pred, dtype=float)
@@ -271,7 +188,6 @@ def safe_metrics(y_true, y_pred):
     return {"R2": float(r2), "MAE": float(mae), "RMSE": float(rmse)}
 
 
-# ---------- Liu MLP (3-layer, multi-output not needed; single target) ----------
 def fit_predict_liu_mlp(X_tr, y_tr, X_te, seed):
     pipe = Pipeline([
         ("scl", StandardScaler()),
@@ -286,7 +202,6 @@ def fit_predict_liu_mlp(X_tr, y_tr, X_te, seed):
     return pipe.predict(X_te)
 
 
-# ---------- Liu RF (Random Forest) ----------
 def fit_predict_liu_rf(X_tr, y_tr, X_te, seed):
     m = RandomForestRegressor(
         n_estimators=200, max_depth=15, min_samples_split=2, min_samples_leaf=1,
@@ -296,7 +211,6 @@ def fit_predict_liu_rf(X_tr, y_tr, X_te, seed):
     return m.predict(X_te)
 
 
-# ---------- JMI Stacking (ERT + HistGBR -> Lasso) ----------
 def fit_predict_jmi_stack(X_tr, y_tr, X_te, seed):
     estimators = [
         ("ert", ExtraTreesRegressor(n_estimators=300, random_state=seed, n_jobs=2)),
@@ -309,11 +223,8 @@ def fit_predict_jmi_stack(X_tr, y_tr, X_te, seed):
     return m.predict(X_te)
 
 
-# ---------- Wu gplearn + RFR ----------
 def fit_predict_wu_gp_rf(X_tr, y_tr, X_te, seed):
-    """gplearn SymbolicTransformer features -> Random Forest."""
     from gplearn.genetic import SymbolicTransformer
-    # Fewer generations and components for LODO speed (small folds, many runs)
     gp = SymbolicTransformer(
         population_size=300, generations=20,
         function_set=("add", "sub", "mul", "div", "inv", "log",
@@ -336,7 +247,6 @@ def fit_predict_wu_gp_rf(X_tr, y_tr, X_te, seed):
     return rf.predict(Xe)
 
 
-# ---------- Jain DNN (3 hidden x 128, dropout 0.2) ----------
 def fit_predict_jain_dnn(X_tr, y_tr, X_te, seed):
     import torch
     import torch.nn as nn
@@ -347,7 +257,6 @@ def fit_predict_jain_dnn(X_tr, y_tr, X_te, seed):
     np.random.seed(seed)
     device = torch.device("cpu")
 
-    # 15% val carve from train
     n = len(X_tr)
     rng = np.random.RandomState(seed)
     perm = rng.permutation(n)
@@ -407,7 +316,6 @@ def fit_predict_jain_dnn(X_tr, y_tr, X_te, seed):
     return out * y_s + y_m
 
 
-# ---------- Sci Rep 2025 Transformer (per-feature token) ----------
 def fit_predict_scirep_transformer(X_tr, y_tr, X_te, seed):
     import torch
     import torch.nn as nn
@@ -488,11 +396,7 @@ def fit_predict_scirep_transformer(X_tr, y_tr, X_te, seed):
     return out * y_s + y_m
 
 
-# ---------- LESets-inspired GNN (composition graph) ----------
 def fit_predict_lesets_gnn(X_tr, y_tr, X_te, seed, elem_order):
-    """Build a per-row graph: nodes=elements present, fully-connected edges,
-    CGConv aggregation, then composition-fraction-weighted readout + MLP head.
-    """
     try:
         import torch
         import torch.nn as nn
@@ -500,7 +404,6 @@ def fit_predict_lesets_gnn(X_tr, y_tr, X_te, seed, elem_order):
         from torch_geometric.data import Data, Batch
         from torch_geometric.nn import CGConv
     except Exception as e:
-        # If pyg not available, fall back to Liu MLP
         return fit_predict_liu_mlp(X_tr, y_tr, X_te, seed)
 
     torch.manual_seed(seed)
@@ -509,20 +412,15 @@ def fit_predict_lesets_gnn(X_tr, y_tr, X_te, seed, elem_order):
 
     n_elem = len(elem_order)
     n_feat = X_tr.shape[1]
-    # Last column of X is T (Kelvin). Element fractions are first n_elem cols.
-    # Hume-Rothery features sit between.
 
-    # Element node descriptors (from ELEM_R/ELEM_CHI/ELEM_VEC)
     node_desc = np.array([
         [ELEM_R.get(e, 130.0), ELEM_CHI.get(e, 1.6), ELEM_VEC.get(e, 6.0)]
         for e in elem_order
     ], dtype=np.float32)
-    # Standardise node desc
     nd_mean = node_desc.mean(axis=0, keepdims=True)
     nd_std = node_desc.std(axis=0, keepdims=True) + 1e-8
     node_desc_s = (node_desc - nd_mean) / nd_std
 
-    # Edge index: fully-connected, no self-loops
     if n_elem >= 2:
         ii, jj = np.triu_indices(n_elem, k=1)
         edges = np.stack([np.concatenate([ii, jj]), np.concatenate([jj, ii])])
@@ -535,13 +433,11 @@ def fit_predict_lesets_gnn(X_tr, y_tr, X_te, seed, elem_order):
         for row in X:
             x = row[:n_elem]
             T_k = row[-1]
-            # Node feature: [fraction, R, EN, VEC, T]
             node_feat = np.concatenate([
                 x[:, None],
                 np.tile(node_desc_s, (1, 1)),
                 np.full((n_elem, 1), (T_k - 700.0) / 500.0),
             ], axis=1).astype(np.float32)
-            # Edge attr (per directed edge): radius mismatch + EN diff + frac product
             if n_elem >= 2:
                 src, dst = ei_t[0].numpy(), ei_t[1].numpy()
                 rs = node_desc[src, 0]; rd = node_desc[dst, 0]
@@ -590,10 +486,8 @@ def fit_predict_lesets_gnn(X_tr, y_tr, X_te, seed, elem_order):
             h = self.proj(batch.x)
             h = torch.relu(self.cg1(h, batch.edge_index, batch.edge_attr))
             h = torch.relu(self.cg2(h, batch.edge_index, batch.edge_attr))
-            # Composition-fraction-weighted sum per graph
             frac = batch.frac.view(-1, 1)
             weighted = h * frac
-            # Sum within graph
             from torch_geometric.utils import scatter
             pooled = scatter(weighted, batch.batch, dim=0, reduce='sum')
             return self.head(pooled).squeeze(-1)
@@ -641,17 +535,12 @@ def fit_predict_lesets_gnn(X_tr, y_tr, X_te, seed, elem_order):
     return out * y_s + y_m
 
 
-# ---------- SISSO (linear regression on combinatorial feature pool) ----------
 def fit_predict_sisso(X_tr, y_tr, X_te, seed):
-    """SISSO-lite: build pool of ratio/product/log/sqrt features then do
-    forward L0 selection up to 3 features + linear regression.
-    """
     rng = np.random.RandomState(seed)
     n_in = X_tr.shape[1]
 
     def expand(X):
         cols = [X]
-        # Pairwise products and ratios (limited to first 8 features for speed)
         kmax = min(8, n_in)
         prods = []
         for i in range(kmax):
@@ -659,23 +548,19 @@ def fit_predict_sisso(X_tr, y_tr, X_te, seed):
                 prods.append((X[:, i] * X[:, j]).reshape(-1, 1))
         if prods:
             cols.append(np.hstack(prods))
-        # Element-wise log/sqrt (positive offset)
         Xs = X.copy()
         Xpos = Xs - Xs.min(axis=0, keepdims=True) + 1.0
         cols.append(np.log(Xpos))
         cols.append(np.sqrt(Xpos))
-        # Inverse (offset)
         cols.append(1.0 / (np.abs(X) + 1e-3))
         return np.hstack(cols)
 
     Xtr_pool = expand(X_tr)
     Xte_pool = expand(X_te)
-    # Standardise
     scl = StandardScaler().fit(Xtr_pool)
     Xtr_s = scl.transform(Xtr_pool)
     Xte_s = scl.transform(Xte_pool)
 
-    # Forward L0 selection: pick 3 features
     n_pool = Xtr_s.shape[1]
     selected = []
     residual = y_tr - y_tr.mean()
@@ -691,7 +576,6 @@ def fit_predict_sisso(X_tr, y_tr, X_te, seed):
         if best_idx == -1:
             break
         selected.append(best_idx)
-        # Update residual via OLS on selected features
         Xs = Xtr_s[:, selected]
         beta, *_ = np.linalg.lstsq(Xs, y_tr, rcond=None)
         residual = y_tr - Xs @ beta
@@ -704,14 +588,11 @@ def fit_predict_sisso(X_tr, y_tr, X_te, seed):
     return Xe @ beta
 
 
-# ---------- PySR no-template (free_1stage) ----------
 def fit_predict_pysr_free(X_tr, y_tr, X_te, seed):
     try:
         from pysr import PySRRegressor
     except Exception:
-        # Fallback if pysr unavailable
         return fit_predict_sisso(X_tr, y_tr, X_te, seed)
-    # Reduced niterations to fit within wall-clock for many folds * seeds
     model = PySRRegressor(
         niterations=30,
         binary_operators=["+", "-", "*", "/"],
@@ -735,11 +616,7 @@ def fit_predict_pysr_free(X_tr, y_tr, X_te, seed):
         return fit_predict_sisso(X_tr, y_tr, X_te, seed)
 
 
-# ============================================================
-# 6. Baseline registry
-# ============================================================
 BASELINES = {
-    # name : (fn, n_seeds, needs_elem_order, class)
     "Liu_MLP":         (fit_predict_liu_mlp,            len(SEEDS), False, "smooth"),
     "Liu_RF":          (fit_predict_liu_rf,             1,          False, "tree"),
     "Wu_gplearn_RFR":  (fit_predict_wu_gp_rf,           len(SEEDS), False, "tree"),

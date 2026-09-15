@@ -36,7 +36,7 @@ S_mix = -8.314 * np.sum(xfrac * np.where(xfrac > 0, np.log(xfrac), 0), axis=1)
 
 comp_key = data[[f"{n}(%)" for n in CN]].apply(lambda r: "_".join(r.astype(str)), axis=1).values
 unique_comps = list(dict.fromkeys(comp_key))
-n_total_comps = len(unique_comps)  # 228
+n_total_comps = len(unique_comps)
 
 with open(EQ_JSON) as f:
     eq_list = json.load(f)
@@ -71,20 +71,18 @@ TWO_STAGE = set(TWO_STAGE_CFG.keys())
 NITER = 200
 SEED = 0
 
-# Fixed train/val split (seed=0, 80/20 composition split)
 rng = np.random.default_rng(SEED)
 all_comps_shuffled = np.array(unique_comps.copy())
 rng.shuffle(all_comps_shuffled)
 
-n_val_comps   = int(round(n_total_comps * 0.20))  # 46
-n_train_pool  = n_total_comps - n_val_comps         # 182
+n_val_comps   = int(round(n_total_comps * 0.20))
+n_train_pool  = n_total_comps - n_val_comps
 
 val_comps_set   = set(all_comps_shuffled[-n_val_comps:])
-train_pool_arr  = all_comps_shuffled[:n_train_pool]  # 182 comps
+train_pool_arr  = all_comps_shuffled[:n_train_pool]
 
 VAL_IDX = np.where(np.array([c in val_comps_set for c in comp_key]))[0]
 
-# 25/50/75/100% of train pool
 DATA_FRACTIONS = [0.25, 0.50, 0.75, 1.00]
 
 def get_eq(template, target):
@@ -165,7 +163,6 @@ def make_pysr(niterations, maxsize, parsimony, tmpdir):
         random_state=SEED, temp_equation_file=True, tempdir=tmpdir,
     )
 
-# Build jobs
 jobs = []
 for frac in DATA_FRACTIONS:
     n_tr_comps = int(round(n_train_pool * frac))

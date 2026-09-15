@@ -1,10 +1,3 @@
-"""Leak-free LODO: comparison workbook, main Fig. 5 remake, supplementary per-fold figure and table.
-
-Aggregation follows the repo (lodo/run_ptsr.py, lodo/run_baselines.py):
-  PT-SR fair   : template with the highest mean training R2 over 5 seeds; its mean test R2
-  PT-SR oracle : template with the highest mean test R2 (capacity ceiling, not deployable)
-  baselines    : median test R2 over seeds (RF and SISSO are single-seed)
-"""
 import os, sys
 import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
@@ -49,7 +42,6 @@ FI = pd.DataFrame(fold_info)
 SH = dict(zip(FI.fold_id, FI.Fold))
 LBL = dict(zip(FI.Fold, FI.label))
 LEG = {r.Fold: f"{r.Fold} {r.Alloy_system} {r.Processing} ({r.Test_type})" for r in FI.itertuples()}
-# naive reference: predict the training-set mean for every test point
 NAIVE = {}
 for fid, short, _ in ORDER:
     mm = M[M.fold_id == fid]
@@ -62,7 +54,6 @@ FI["Test_YS_SD_MPa"] = FI.Fold.map(lambda f: round(NAIVE[f]["test_sd"], 1))
 FI["Train_YS_range_MPa"] = FI.Fold.map(lambda f: NAIVE[f]["train_range"])
 FI["Naive_train_mean_MAE_MPa"] = FI.Fold.map(lambda f: round(NAIVE[f]["mae"], 1))
 
-# ---- PT-SR aggregation (repo protocol) -------------------------------------
 agg = (P.groupby(["fold_id", "model"])
          .agg(train_mean=("train_r2", "mean"), test_mean=("test_r2", "mean"),
               test_median=("test_r2", "median"), test_min=("test_r2", "min"),
@@ -82,7 +73,6 @@ for fid, g in agg.groupby("fold_id"):
         oracle.append(dict(fold_id=fid, template=o.model, test_r2=o.test_mean, lo=o.test_min, hi=o.test_max, mae=o.mae_mean))
 FAIR = pd.DataFrame(fair); ORA = pd.DataFrame(oracle)
 
-# ---- baselines aggregation ---------------------------------------------------
 BA = (B.groupby(["fold_id", "model"])
         .agg(test_r2=("test_r2", "median"), lo=("test_r2", "min"), hi=("test_r2", "max"),
              mae=("test_mae", "median"), train_r2=("train_r2", "median"))
@@ -116,7 +106,6 @@ summ = pd.DataFrame({
     "Widest_seed_spread_R2": (HI - LO).max(axis=1).values,
 }, index=R2.index).sort_values(["Folds_MAE_better_than_naive", "Median_MAE_skill_vs_naive"], ascending=False)
 
-# ---- workbook ---------------------------------------------------------------
 table = R2.copy(); table.index = [NAME.get(m, m) for m in table.index]
 table.columns = [LBL[c] for c in table.columns]
 table = table.loc[summ.Method]
@@ -167,7 +156,6 @@ for ws in wb.worksheets:
 wb["README"].column_dimensions["B"].width = 140
 wb.save(out)
 
-# ---- Fig. 5 remake ------------------------------------------------------------
 KIND = {"PT-SR_fair": "ptsr", "PySR_no_template": "sr", "SISSO": "sr"}
 methods = [m for m in summ.index if m != "PT-SR_oracle"][::-1]
 col = lambda m: {"ptsr": N.C["ptsr"], "sr": N.C["free"]}.get(KIND.get(m), N.C["sota"])
@@ -204,7 +192,6 @@ N.panel_label(axC, "a", dx=-0.62, dy=1.07); N.panel_label(axK, "b", dx=-0.02, dy
 fig.savefig(f"{FIG}/Fig5_lodo.svg", bbox_inches="tight"); fig.savefig(f"{FIG}/Fig5_lodo.png", bbox_inches="tight", dpi=300)
 plt.close(fig)
 
-# ---- Supplementary figure: per-fold heatmaps (R2 and MAE skill) --------------------
 rows_order = list(summ.index)
 fig, axs = plt.subplots(2, 1, figsize=(N.W2, 6.4), gridspec_kw=dict(hspace=0.12))
 for ax, T, title, vmin, fmt in [(axs[0], R2, "Test R² (colour clipped to [−1, 1])", -1, "{:.2f}"), (axs[1], SKILL, "MAE skill vs training-mean predictor (colour clipped to [−1, 1])", -1, "{:.2f}")]:

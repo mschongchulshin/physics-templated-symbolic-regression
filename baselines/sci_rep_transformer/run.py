@@ -1,32 +1,7 @@
-"""
-Sci Reports 2025 Transformer baseline (Korkmaz et al., 2025)
-Paper: https://www.nature.com/articles/s41598-025-95170-z
-Title: "High entropy alloy property predictions using a transformer-based language model"
-
-Adapted (simplified) for the PT-SR HEA dataset (CoCrCuFeNi 696).
-
-Architecture (per task spec):
-- Input embedding: 13 features -> per-feature token embedding dim 64
-- 2-layer Transformer encoder, 4 heads, feed-forward dim 256
-- Mean pooling across feature tokens -> MLP regression head -> 1 output
-
-Protocol (matches PT-SR):
-- 13 input features (5 compositions + 7 elemental descriptors + T)
-- 12 targets, 5-fold composition-grouped CV, seeds 0..4
-- StandardScaler on training features (fit on train fold, applied to val/test)
-- Adam, lr=1e-3, up to 200 epochs, early stopping on validation MSE
-
-Outputs:
-- baselines/sci_rep_transformer/results.json
-  Structure: {target: {mean_R2, std_R2, fold_seed_R2s}}
-  Checkpointed after each target.
-- baselines/sci_rep_transformer/summary.md
-"""
 
 from pathlib import Path
 import os
 
-# Threading control before importing numerical libs
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 os.environ.setdefault("MKL_NUM_THREADS", "2")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "2")
@@ -46,12 +21,6 @@ from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import StandardScaler
 
 def _load_sheet(path, sheet_name):
-    """Rows for one temperature, from the flat corpus.
-
-    These baselines were written against a workbook with one sheet per
-    temperature. The corpus is deposited as a single CSV, so the sheet name is
-    read as the temperature it stands for.
-    """
     import pandas as _pd
     _t = int(str(sheet_name).rstrip("Kk"))
     _df = _pd.read_csv(path)
@@ -72,7 +41,6 @@ OUT_MD = f"{OUT_DIR}/summary.md"
 SEEDS = [0, 1, 2, 3, 4]
 N_FOLDS = 5
 
-# Hyperparameters per task spec
 EMBED_DIM = 64
 N_HEADS = 4
 N_LAYERS = 2
@@ -84,14 +52,11 @@ MAX_EPOCHS = 200
 PATIENCE = 30
 BATCH_SIZE = 64
 
-device = torch.device("cpu")  # CPU for reproducibility/parallel agents
+device = torch.device("cpu")
 print(f"Using device: {device}")
 print(f"Threads: torch={torch.get_num_threads()} OMP={os.environ.get('OMP_NUM_THREADS')}")
 
 
-# ============================================================
-# Data loading
-# ============================================================
 TEMPS = {"80K": 80, "300K": 300, "1100K": 1100}
 dfs = []
 for sheet, temp in TEMPS.items():
@@ -134,17 +99,7 @@ TARGETS = {
 }
 
 
-# ============================================================
-# Model
-# ============================================================
 class SciRepTransformer(nn.Module):
-    """Sci Rep 2025-style transformer regressor for tabular HEA features.
-
-    Per-feature scalar -> linear embed (64-d) + learned positional embedding
-      -> 2-layer TransformerEncoder (4 heads, FF=256)
-      -> mean pooling across feature tokens
-      -> MLP head -> scalar.
-    """
 
     def __init__(self, n_features: int, d_model: int = EMBED_DIM, nhead: int = N_HEADS,
                  num_layers: int = N_LAYERS, dim_ff: int = FF_DIM, dropout: float = DROPOUT):
@@ -152,9 +107,7 @@ class SciRepTransformer(nn.Module):
         self.n_features = n_features
         self.d_model = d_model
 
-        # Per-feature linear embedding (scalar -> d_model)
         self.embed = nn.Linear(1, d_model)
-        # Learned positional embedding for each feature slot
         self.pos = nn.Parameter(torch.randn(1, n_features, d_model) * 0.02)
 
         encoder_layer = nn.TransformerEncoderLayer(
@@ -171,17 +124,13 @@ class SciRepTransformer(nn.Module):
         )
 
     def forward(self, x):
-        # x: (B, n_features)
-        tokens = self.embed(x.unsqueeze(-1))  # (B, n_features, d_model)
+        tokens = self.embed(x.unsqueeze(-1))
         tokens = tokens + self.pos
-        h = self.encoder(tokens)              # (B, n_features, d_model)
-        pooled = h.mean(dim=1)                # mean pooling -> (B, d_model)
+        h = self.encoder(tokens)
+        pooled = h.mean(dim=1)
         return self.head(pooled).squeeze(-1)
 
 
-# ============================================================
-# Training
-# ============================================================
 def train_one(model, X_tr, y_tr, X_va, y_va, seed,
               max_epochs=MAX_EPOCHS, lr=LR, batch_size=BATCH_SIZE, patience=PATIENCE):
     g = torch.Generator()
@@ -239,12 +188,8 @@ def predict(model, X):
         return model(torch.from_numpy(X).float()).cpu().numpy()
 
 
-# ============================================================
-# Run 5-fold CV x 5 seeds for all 12 targets, checkpointing per-target
-# ============================================================
 os.makedirs(OUT_DIR, exist_ok=True)
 
-# Resume from existing checkpoint if present
 if os.path.exists(OUT_JSON):
     with open(OUT_JSON, "r") as f:
         results = json.load(f)
@@ -273,7 +218,6 @@ for tkey, tcol in TARGETS.items():
     print(f"\n=== Target: {tkey} ({tcol}) ===")
     t0 = time.time()
 
-    # fold_seed_R2s[fold][seed_idx] for compactness
     fold_seed_r2s = [[None] * len(SEEDS) for _ in range(N_FOLDS)]
     flat_r2s = []
 
@@ -281,7 +225,6 @@ for tkey, tcol in TARGETS.items():
     splits = list(gkf.split(X_all, y_all, groups))
 
     for fold, (tri_full, tei) in enumerate(splits):
-        # Carve out validation set from training fold (15%)
         rng = np.random.default_rng(1000 + fold)
         perm = rng.permutation(len(tri_full))
         n_val = max(1, int(len(tri_full) * 0.15))
@@ -290,7 +233,6 @@ for tkey, tcol in TARGETS.items():
         tri = tri_full[tr_idx_local]
         vai = tri_full[val_idx_local]
 
-        # Standardize features and target on TRAINING (excluding val) fold
         x_scaler = StandardScaler().fit(X_all[tri])
         y_mean = float(np.mean(y_all[tri]))
         y_std = float(np.std(y_all[tri]) + 1e-12)
@@ -326,7 +268,7 @@ for tkey, tcol in TARGETS.items():
     results[tkey] = {
         "mean_R2": mean_r2,
         "std_R2": std_r2,
-        "fold_seed_R2s": fold_seed_r2s,  # shape: [N_FOLDS][len(SEEDS)]
+        "fold_seed_R2s": fold_seed_r2s,
         "seeds": SEEDS,
         "n_folds": N_FOLDS,
         "time_sec": float(elapsed),
@@ -335,9 +277,6 @@ for tkey, tcol in TARGETS.items():
     print(f"  -> {tkey}: R2 = {mean_r2:.4f} ± {std_r2:.4f}  ({elapsed:.1f}s) [checkpointed]")
 
 
-# ============================================================
-# Summary md
-# ============================================================
 total_elapsed = time.time() - t0_total
 mean_r2_overall = float(np.mean([results[t]["mean_R2"] for t in TARGETS if t in results]))
 

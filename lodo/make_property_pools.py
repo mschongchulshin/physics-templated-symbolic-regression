@@ -1,19 +1,3 @@
-"""Repeat-free CAST pools for properties other than yield strength, using the rules of the YS dataset.
-
-Source: the raw Borg MPEA dataset (data/LODO_experimental_dataset.csv), CAST rows only. Values are NOT yet checked against the
-original papers, unlike the YS dataset. This is a screening step, the property that works gets verified after.
-
-Rules, identical to make_norepeat.py:
-1. repeats: every (composition rounded to 1 at.%, test temperature, test type) group with two or more rows is dropped
-2. zigzag series: within one paper, one temperature and one test type, compositions ordered by the element that
-   varies most; if the property changes direction two or more times the whole series is dropped
-3. pools: one alloy system S (rows whose element set is S, or S with one element at zero), at least 6 rows,
-   4 compositions and 3 full-system rows, nested subsystems dropped
-
-Writes norepeat_<property>.pkl with the same columns as norepeat_V.pkl (target column named YS_MPa so the
-existing LOCO code runs unchanged) and prints the pool table for every property.
-usage: python make_property_pools.py
-"""
 from pathlib import Path
 import os, re
 import numpy as np, pandas as pd
@@ -22,7 +6,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = str(Path(__file__).resolve().parent.parent / "data"
           / "LODO_experimental_dataset.csv")
 PROPS = {
-    "HV": ("PROPERTY: HV", False),                                  # hardness, no test type, room temperature
+    "HV": ("PROPERTY: HV", False),
     "UTS": ("PROPERTY: UTS (MPa)", True),
     "elongation": ("PROPERTY: Elongation (%)", True),
     "density": ("PROPERTY: Exp. Density (g/cm$^3$)", False),

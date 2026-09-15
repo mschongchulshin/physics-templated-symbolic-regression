@@ -1,48 +1,3 @@
-"""
-LESets-inspired GNN baseline for HEA dataset.
-
-Reference: Zhang et al. (2024-25), "Do Graph Neural Networks Work for High Entropy
-Alloys?" arXiv:2408.16337  (https://github.com/Henrium/LESets)
-
-Original LESets architecture (per-composition):
-    - For each composition, build a *set* of local-environment (LE) graphs
-      derived from atomic configurations.
-    - phi(GNN) embeds each LE graph -> graph embedding.
-    - Aggregate set embeddings weighted by composition fractions.
-    - rho(MLP) -> scalar property.
-
-Our HEA dataset (CoCrCuFeNi 696, 232 compositions x 3 temperatures) has *only*
-composition + temperature, with no per-atom structural information.  We
-therefore implement a *simplified* LESets that preserves the architectural
-spirit (GNN embedding -> composition-fraction-weighted set aggregation ->
-MLP head), but uses a single composition-level graph per sample:
-
-    - Nodes: 5 element nodes (Co, Cr, Cu, Fe, Ni).
-    - Node features: composition fraction + elemental descriptors
-      (atomic number, atomic mass, atomic radius, electronegativity, VEC,
-       melting T, density, cohesive energy).
-    - Edges: fully-connected (4 neighbours each, no self-loops).
-    - Edge attributes: pair-wise descriptors:
-        * Miedema-style mixing-enthalpy proxy from electronegativity diff
-        * radius mismatch
-        * VEC difference
-        * fraction product (xi * xj)
-    - Global feature: temperature T (concatenated to graph embedding before MLP).
-
-GNN: 2 x CGConv layers (LESets uses CGConv among others; CGConv consumes edge
-attributes directly).  Aggregation: composition-fraction-weighted node sum
-(LESets-style "phi -> weighted sum -> rho").  Head: 3-layer MLP -> 1 scalar.
-
-Protocol:
-    - 5-fold composition-grouped CV (GroupKFold over comp_id).
-    - 5 seeds (0..4).
-    - 12 targets.
-    - Reports per-target mean R^2 across folds*seeds.
-
-NOTE: This is the *simplified* LESets variant (composition-graph version).
-The exact LESets-on-LE-graphs is not applicable without atomic structure data
-for our compositions, so we report results as "LESets-inspired (simplified)".
-"""
 
 from pathlib import Path
 import json
@@ -62,12 +17,6 @@ from torch_geometric.data import Data, Batch
 from torch_geometric.nn import CGConv
 
 def _load_sheet(path, sheet_name):
-    """Rows for one temperature, from the flat corpus.
-
-    These baselines were written against a workbook with one sheet per
-    temperature. The corpus is deposited as a single CSV, so the sheet name is
-    read as the temperature it stands for.
-    """
     import pandas as _pd
     _t = int(str(sheet_name).rstrip("Kk"))
     _df = _pd.read_csv(path)
@@ -77,14 +26,12 @@ def _load_sheet(path, sheet_name):
 
 warnings.filterwarnings("ignore")
 
-# ---- Reproducibility / threading -------------------------------------------
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 os.environ.setdefault("MKL_NUM_THREADS", "2")
 torch.set_num_threads(2)
 DEVICE = torch.device("cpu")
 
 
-# ---- Paths ------------------------------------------------------------------
 DATA_FILE = str(Path(__file__).resolve().parent.parent / "data" / "CoCrCuFeNi_684.csv")
 OUT_DIR = str(Path(__file__).resolve().parent.parent / "results" / "generated" / "lesets_gnn")
 RESULTS_PATH = os.path.join(OUT_DIR, "results.json")
@@ -93,7 +40,6 @@ CKPT_DIR = os.path.join(OUT_DIR, "ckpts")
 os.makedirs(CKPT_DIR, exist_ok=True)
 
 
-# ---- Data definitions -------------------------------------------------------
 TEMPS = {"80K": 80, "300K": 300, "1100K": 1100}
 ELEMENTS = ["Co", "Cr", "Cu", "Fe", "Ni"]
 COMP_COLS = [f"{e}(%)" for e in ELEMENTS]
@@ -113,12 +59,7 @@ TARGETS = {
     "Other_20pct": "Other 20%(%)",
 }
 
-# Elemental descriptors (Co, Cr, Cu, Fe, Ni)
-# atomic number, atomic mass (u), atomic radius (pm), Pauling EN,
-# valence electron count (VEC for d-block: s + d), melting T (K), density (g/cm^3),
-# cohesive energy (eV/atom)
 ELEM_DESC = {
-    # element : [Z, mass, r_pm, EN, VEC, Tm_K, rho, Ecoh_eV]
     "Co": [27, 58.93, 125.0, 1.88, 9.0, 1768.0, 8.90, 4.39],
     "Cr": [24, 52.00, 128.0, 1.66, 6.0, 2180.0, 7.19, 4.10],
     "Cu": [29, 63.55, 128.0, 1.90, 11.0, 1357.8, 8.96, 3.49],
@@ -128,7 +69,6 @@ ELEM_DESC = {
 DESC_KEYS = ["Z", "mass", "r_pm", "EN", "VEC", "Tm", "rho", "Ecoh"]
 
 
-# ---- Load data --------------------------------------------------------------
 def load_data():
     dfs = []
     for sheet, t in TEMPS.items():
@@ -146,22 +86,18 @@ def load_data():
     return data
 
 
-# ---- Graph construction -----------------------------------------------------
-NODE_FEAT_DIM = 1 + len(DESC_KEYS)  # frac + 8 descriptors
-EDGE_FEAT_DIM = 4                    # |dEN|, |dr|, |dVEC|, xi*xj
+NODE_FEAT_DIM = 1 + len(DESC_KEYS)
+EDGE_FEAT_DIM = 4
 
 
 def build_graph(comp_at_pct, T_K):
-    """Build a 5-node fully-connected graph for one (composition, T) sample."""
     fracs = np.asarray(comp_at_pct, dtype=np.float64) / 100.0
     fracs = fracs / max(fracs.sum(), 1e-12)
 
-    # Node features: [frac, Z, mass, r, EN, VEC, Tm, rho, Ecoh]
     desc_arr = np.array([ELEM_DESC[e] for e in ELEMENTS], dtype=np.float64)
     node_feats = np.concatenate([fracs[:, None], desc_arr], axis=1)
     x = torch.tensor(node_feats, dtype=torch.float32)
 
-    # Fully-connected edges (no self-loops)
     src, dst, ea = [], [], []
     for i in range(5):
         for j in range(5):
@@ -177,25 +113,15 @@ def build_graph(comp_at_pct, T_K):
     edge_index = torch.tensor([src, dst], dtype=torch.long)
     edge_attr = torch.tensor(ea, dtype=torch.float32)
 
-    # Composition fractions used for LESets-style aggregation
     frac_t = torch.tensor(fracs, dtype=torch.float32)
 
-    # Global temperature
     g = torch.tensor([T_K], dtype=torch.float32)
 
     return Data(x=x, edge_index=edge_index, edge_attr=edge_attr,
                 frac=frac_t, T=g)
 
 
-# ---- Model ------------------------------------------------------------------
 class LESetsSimpleGNN(nn.Module):
-    """
-    Simplified LESets:
-      - 2x CGConv message-passing on the 5-element composition graph.
-      - LESets-style aggregation: per-node embeddings weighted by composition
-        fraction, summed -> graph embedding.
-      - Concatenate global feature T -> 3-layer MLP -> scalar.
-    """
     def __init__(self, node_dim=NODE_FEAT_DIM, edge_dim=EDGE_FEAT_DIM,
                  hidden=64, mlp_hidden=64):
         super().__init__()
@@ -203,7 +129,6 @@ class LESetsSimpleGNN(nn.Module):
         self.conv1 = CGConv(channels=hidden, dim=edge_dim, batch_norm=False)
         self.conv2 = CGConv(channels=hidden, dim=edge_dim, batch_norm=False)
         self.act = nn.SiLU()
-        # rho: 3-layer MLP head as in LESets
         self.head = nn.Sequential(
             nn.Linear(hidden + 1, mlp_hidden),
             nn.SiLU(),
@@ -218,26 +143,19 @@ class LESetsSimpleGNN(nn.Module):
         h = self.act(self.conv1(h, ei, ea))
         h = self.act(self.conv2(h, ei, ea))
 
-        # LESets-style: per-graph weighted sum by composition fraction.
-        # data.batch maps each node to its sample index.
-        frac = data.frac.unsqueeze(-1)            # [N_nodes, 1]
-        weighted = h * frac                         # [N_nodes, hidden]
-        # scatter-sum into per-graph embeddings
+        frac = data.frac.unsqueeze(-1)
+        weighted = h * frac
         n_graphs = int(data.batch.max().item()) + 1
         g_emb = torch.zeros(n_graphs, h.size(1), device=h.device)
         g_emb.index_add_(0, data.batch, weighted)
 
-        # Concatenate global T (one scalar per graph)
-        # data.T is shape [n_graphs] (one per graph) since each graph has 1 T entry
         T = data.T.view(n_graphs, 1)
         gT = torch.cat([g_emb, T], dim=-1)
         out = self.head(gT).squeeze(-1)
         return out
 
 
-# ---- Training utilities -----------------------------------------------------
 def make_loader(graphs, batch_size=64, shuffle=False):
-    """Simple manual batching using PyG Batch.from_data_list."""
     idx = np.arange(len(graphs))
     if shuffle:
         np.random.shuffle(idx)
@@ -254,7 +172,6 @@ def train_one(model, train_graphs, val_graphs, y_train, y_val,
     opt = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
     loss_fn = nn.MSELoss()
 
-    # Prebuild val batch (single batch)
     val_batch = Batch.from_data_list(val_graphs).to(DEVICE)
     y_val_t = torch.tensor(y_val, dtype=torch.float32, device=DEVICE)
 
@@ -263,7 +180,6 @@ def train_one(model, train_graphs, val_graphs, y_train, y_val,
     bad = 0
     for ep in range(max_epochs):
         model.train()
-        # Shuffle indices
         idx = np.random.permutation(len(train_graphs))
         running = 0.0
         n_seen = 0
@@ -312,7 +228,6 @@ def predict(model, graphs):
     return p
 
 
-# ---- Main pipeline ----------------------------------------------------------
 def set_seed(s):
     np.random.seed(s)
     torch.manual_seed(s)
@@ -327,7 +242,6 @@ def main():
     print(f"Total samples: {len(data)} (compositions x T)")
     print(f"Unique compositions: {data['comp_id'].nunique()}")
 
-    # Build all graphs once (no T-dependent node features, only T as global)
     all_graphs = []
     for _, row in data.iterrows():
         comp = [row[c] for c in COMP_COLS]
@@ -357,12 +271,10 @@ def main():
         print("=" * 60)
 
         y_all = data[tcol].values.astype(np.float64)
-        # Standardise targets per-target globally for stable training; we
-        # invert before computing R^2.
         y_scaler = StandardScaler()
         y_std = y_scaler.fit_transform(y_all.reshape(-1, 1)).ravel()
 
-        per_seed_fold_r2 = []   # (seed, fold) -> r2 (on original scale)
+        per_seed_fold_r2 = []
         per_seed_fold_mae = []
         t_target = time.time()
 
@@ -370,7 +282,6 @@ def main():
             set_seed(seed)
             seed_r2s, seed_maes = [], []
             for fi, (tr_idx, te_idx) in enumerate(folds):
-                # Inner val from train (last 15% by composition)
                 tr_groups = groups[tr_idx]
                 uniq = np.unique(tr_groups)
                 rng = np.random.RandomState(seed * 100 + fi)
@@ -395,7 +306,6 @@ def main():
                     batch_size=64,
                 )
 
-                # Predict test in original scale
                 p_std = predict(model, te_graphs)
                 p_orig = y_scaler.inverse_transform(p_std.reshape(-1, 1)).ravel()
                 y_te = y_all[te_idx]
@@ -404,7 +314,6 @@ def main():
                 seed_r2s.append(r2)
                 seed_maes.append(mae)
 
-                # Save the very first fold/seed checkpoint per target
                 if seed == SEEDS[0] and fi == 0:
                     ck = os.path.join(CKPT_DIR, f"{tname}_seed{seed}_fold{fi}.pt")
                     torch.save(model.state_dict(), ck)
@@ -416,7 +325,7 @@ def main():
                 f"mean={np.mean(seed_r2s):.3f}"
             )
 
-        arr = np.array(per_seed_fold_r2)            # [n_seeds, n_folds]
+        arr = np.array(per_seed_fold_r2)
         arr_mae = np.array(per_seed_fold_mae)
         results["targets"][tname] = {
             "r2_mean": float(arr.mean()),
@@ -433,7 +342,6 @@ def main():
             f"(MAE {arr_mae.mean():.3g})  [{time.time()-t_target:.1f}s]"
         )
 
-        # Persist incremental results after every target
         with open(RESULTS_PATH, "w") as f:
             json.dump(results, f, indent=2)
 
@@ -443,7 +351,6 @@ def main():
     with open(RESULTS_PATH, "w") as f:
         json.dump(results, f, indent=2)
 
-    # Summary md
     lines = []
     lines.append("# LESets-inspired GNN (simplified) — HEA CoCrCuFeNi 696\n")
     lines.append(

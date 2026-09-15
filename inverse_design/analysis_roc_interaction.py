@@ -1,23 +1,4 @@
 #!/usr/bin/env python3
-"""
-PT-SR HEA paper auxiliary analyses.
-
-Task 1: ROC curves for inverse design (PT-SR vs random) for UTS, YM, FCC stability.
-Task 2: Feature interaction 2D contour (DeltaH_mix x VEC) for UTS / FCC at T=300 K.
-
-Inputs
-------
-- data/CoCrCuFeNi_684.csv
-- data/raw/features_13.csv
-- equations/free_2stage_best_equations.xlsx
-
-Outputs
--------
-- results/generated/roc_inverse_design.png
-- results/generated/feature_interaction_contour.png
-- results/generated/roc_inverse_design.json
-- results/generated/feature_interaction_grid.json
-"""
 
 from pathlib import Path
 import os
@@ -31,9 +12,6 @@ import sympy as sp
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
-# ----------------------------------------------------------------------
-# Paths
-# ----------------------------------------------------------------------
 ROOT      = Path(__file__).resolve().parent.parent
 RAW_CSV   = str(ROOT / "data" / "CoCrCuFeNi_684.csv")
 FEAT_CSV  = str(ROOT / "data" / "features_13.csv")
@@ -48,9 +26,6 @@ INTER_PNG = os.path.join(FIG_DIR,  "feature_interaction_contour.png")
 ROC_JSON  = os.path.join(DATA_DIR, "roc_inverse_design.json")
 GRID_JSON = os.path.join(DATA_DIR, "feature_interaction_grid.json")
 
-# ----------------------------------------------------------------------
-# Atomic descriptors for [Co, Cr, Cu, Fe, Ni]
-# ----------------------------------------------------------------------
 ELEMENTS = ["Co", "Cr", "Cu", "Fe", "Ni"]
 PROPS = {
     "atomic_volume":        np.array([6.6516, 7.2722, 7.0922, 7.0959, 6.5948]),
@@ -60,18 +35,14 @@ PROPS = {
     "molar_heat_capacity":  np.array([24.81, 23.35, 24.44, 25.10, 26.07]),
     "vdw_radius_batsanov":  np.array([200.0, 205.0, 200.0, 205.0, 200.0]),
 }
-VEC = np.array([9.0, 6.0, 11.0, 8.0, 10.0])  # Co, Cr, Cu, Fe, Ni
+VEC = np.array([9.0, 6.0, 11.0, 8.0, 10.0])
 
-# Miedema-style binary mixing enthalpies (kJ/mol) for liquid HEA, well used
-# in HEA literature (Takeuchi & Inoue 2005 + Zhang/Yang 2008 compilations).
-# Symmetric matrix order: Co, Cr, Cu, Fe, Ni
 DH_BINARY = np.array([
-    # Co     Cr    Cu    Fe    Ni
-    [  0.0, -4.0,  6.0, -1.0,   0.0],   # Co
-    [ -4.0,  0.0, 12.0, -1.0,  -7.0],   # Cr
-    [  6.0, 12.0,  0.0, 13.0,   4.0],   # Cu
-    [ -1.0, -1.0, 13.0,  0.0,  -2.0],   # Fe
-    [  0.0, -7.0,  4.0, -2.0,   0.0],   # Ni
+    [  0.0, -4.0,  6.0, -1.0,   0.0],
+    [ -4.0,  0.0, 12.0, -1.0,  -7.0],
+    [  6.0, 12.0,  0.0, 13.0,   4.0],
+    [ -1.0, -1.0, 13.0,  0.0,  -2.0],
+    [  0.0, -7.0,  4.0, -2.0,   0.0],
 ])
 R_GAS = 8.314
 
@@ -81,25 +52,20 @@ def _mole_fractions(comp_pct):
 
 
 def compute_thermo_descriptors(comp_pct):
-    """Return dict with VEC, S_mix (J/mol/K), delta_r, delta_chi, DH_mix (kJ/mol)."""
     x = _mole_fractions(comp_pct)
     vec = float(np.sum(x * VEC))
 
-    # Atomic radius mismatch using metallic radius
     r = PROPS["metallic_radius"]
     r_mean = float(np.sum(x * r))
     delta_r = float(100.0 * np.sqrt(np.sum(x * (1 - r / r_mean) ** 2)))
 
-    # Pauling electronegativity
     chi = np.array([1.88, 1.66, 1.90, 1.83, 1.91])
     chi_mean = float(np.sum(x * chi))
     delta_chi = float(np.sqrt(np.sum(x * (chi - chi_mean) ** 2)))
 
-    # Configurational entropy of mixing
     xs = np.clip(x, 1e-12, None)
     S_mix = float(-R_GAS * np.sum(xs * np.log(xs)))
 
-    # Miedema-style enthalpy of mixing
     DH = 0.0
     for i in range(5):
         for j in range(i + 1, 5):
@@ -114,7 +80,6 @@ def compute_thermo_descriptors(comp_pct):
 
 
 def compute_features_13(comp_pct):
-    """Compute the 13-feature SR descriptor row."""
     x = _mole_fractions(comp_pct)
     out = {}
     for pname, vals in PROPS.items():
@@ -125,9 +90,6 @@ def compute_features_13(comp_pct):
     return out
 
 
-# ----------------------------------------------------------------------
-# Build PT-SR equation evaluators
-# ----------------------------------------------------------------------
 def build_evaluators():
     eq_df = pd.read_excel(EQ_XLSX)
     var_names = [
@@ -163,17 +125,14 @@ def build_evaluators():
 
 
 def predict_property(evaluators, target, comps_pct, T_kelvin):
-    """Vectorised prediction for an array of compositions (N,5) at temperature T."""
     comps = np.atleast_2d(comps_pct).astype(float)
     n = comps.shape[0]
 
-    # Element percent
     arrs = {nm: np.zeros(n) for nm in evaluators[target]["var_names"]}
     for i, el in enumerate(ELEMENTS):
         arrs[el] = comps[:, i]
     arrs["T"] = np.full(n, float(T_kelvin))
 
-    # 13-feature descriptors
     for k in range(n):
         f13 = compute_features_13(comps[k])
         for key, val in f13.items():
@@ -189,13 +148,9 @@ def predict_property(evaluators, target, comps_pct, T_kelvin):
     return np.asarray(pred, dtype=float)
 
 
-# ----------------------------------------------------------------------
-# Task 1: ROC for inverse design
-# ----------------------------------------------------------------------
 def task1_roc(evaluators):
     df_raw = pd.read_csv(RAW_CSV)
 
-    # Use 300 K snapshot for ranking
     df = df_raw[df_raw["T_K"] == 300].reset_index(drop=True)
     comps = df[["Co(%)", "Cr(%)", "Cu(%)", "Fe(%)", "Ni(%)"]].values
 
@@ -211,30 +166,25 @@ def task1_roc(evaluators):
 
     for ax, (tgt, (col, direction)) in zip(axes, targets_cfg.items()):
         true_vals = df[col].values.astype(float)
-        # Top 10% threshold defines positives
         thr = np.percentile(true_vals, 90)
         y_true = (true_vals >= thr).astype(int)
 
-        # PT-SR predicted score at 300 K
         pred = predict_property(evaluators, tgt, comps, 300.0)
         score_ptsr = pred if direction == "max" else -pred
 
         fpr_p, tpr_p, _ = roc_curve(y_true, score_ptsr)
         auc_p = auc(fpr_p, tpr_p)
 
-        # Random control: average over many random score draws
         n_rand = 1000
         aucs_rand = np.zeros(n_rand)
         for k in range(n_rand):
             score_r = rng.uniform(size=len(y_true))
             fpr_r, tpr_r, _ = roc_curve(y_true, score_r)
             aucs_rand[k] = auc(fpr_r, tpr_r)
-        # Plot a single representative random ROC for visual reference
         score_r = rng.uniform(size=len(y_true))
         fpr_r, tpr_r, _ = roc_curve(y_true, score_r)
         auc_r_single = auc(fpr_r, tpr_r)
 
-        # "Efficiency" = early enrichment factor at 10% of ranked candidates
         order = np.argsort(-score_ptsr)
         n10 = max(1, int(np.ceil(0.10 * len(y_true))))
         precision_top10 = float(y_true[order[:n10]].sum() / n10)
@@ -283,9 +233,6 @@ def task1_roc(evaluators):
     return summary
 
 
-# ----------------------------------------------------------------------
-# Task 2: 2D feature interaction contour (DeltaH_mix vs VEC)
-# ----------------------------------------------------------------------
 def task2_interaction(evaluators):
     df_raw = pd.read_csv(RAW_CSV)
     df = df_raw[df_raw["T_K"] == 300].reset_index(drop=True)
@@ -297,8 +244,6 @@ def task2_interaction(evaluators):
     VEC_idx = desc_keys.index("VEC")
     DH_train, VEC_train = descs[:, DH_idx], descs[:, VEC_idx]
 
-    # Sample uniformly inside the training simplex bounds (each 5-50 %)
-    # using rejection sampling so we stay near the training manifold.
     rng = np.random.default_rng(0)
     N_TARGET = 12000
     samples = []
@@ -312,10 +257,8 @@ def task2_interaction(evaluators):
     samples = np.vstack(samples)[:N_TARGET]
     N_SAMPLE = samples.shape[0]
 
-    # Predict UTS and FCC_0pct at 300 K
     uts_pred = predict_property(evaluators, "UTS",      samples, 300.0)
     fcc_pred = predict_property(evaluators, "FCC_0pct", samples, 300.0)
-    # Physical clipping for FCC fraction
     fcc_pred = np.clip(fcc_pred, 0.0, 100.0)
 
     DH_s = np.zeros(N_SAMPLE)
@@ -325,7 +268,6 @@ def task2_interaction(evaluators):
         DH_s[k] = d["DH_mix"]
         VEC_s[k] = d["VEC"]
 
-    # Bin onto a regular grid via mean inside each cell, then smooth slightly
     nbins = 40
     DH_edges  = np.linspace(DH_s.min(),  DH_s.max(),  nbins + 1)
     VEC_edges = np.linspace(VEC_s.min(), VEC_s.max(), nbins + 1)
@@ -337,7 +279,6 @@ def task2_interaction(evaluators):
                                  weights=values)
         C, _, _ = np.histogram2d(VEC_s, DH_s, bins=[VEC_edges, DH_edges])
         Z = np.where(C > 0, H / np.maximum(C, 1), np.nan)
-        # 3x3 nan-aware smoothing pass
         Zs = np.full_like(Z, np.nan)
         for i in range(Z.shape[0]):
             for j in range(Z.shape[1]):
@@ -364,17 +305,14 @@ def task2_interaction(evaluators):
         cb = fig.colorbar(cf, ax=ax, shrink=0.9)
         cb.set_label(name)
 
-        # Overlay training compositions
         ax.scatter(DH_train, VEC_train, c="white", edgecolor="black",
                    s=22, lw=0.6, alpha=0.9, label="232 training comps")
 
-        # Mark Cantor (equiatomic) point
         cantor = compute_thermo_descriptors([20, 20, 20, 20, 20])
         ax.scatter([cantor["DH_mix"]], [cantor["VEC"]],
                    marker="*", s=320, c="red", edgecolor="white",
                    linewidth=1.2, label="Cantor (20-20-20-20-20)", zorder=5)
 
-        # Highlight top-decile UTS region inside training set
         true_vals = df["UTS(Gpa)"].values
         thr_uts = np.percentile(true_vals, 90)
         mask = true_vals >= thr_uts
@@ -418,7 +356,6 @@ def task2_interaction(evaluators):
     return payload
 
 
-# ----------------------------------------------------------------------
 def main():
     evaluators = build_evaluators()
     print("Built evaluators for:", list(evaluators.keys()))

@@ -1,21 +1,9 @@
-"""Unified Nature-style plotting helpers for the PT-SR HEA manuscript.
-Import this in every figure script so Results 2/3/4 + all Supplementary
-figures share one consistent look.
-
-Conventions (established in the SOTA comparison figure):
-  - sans-serif (Helvetica/Arial), small fonts, svg.fonttype='none' (editable text)
-  - thin #333 spines, despined top/right, light grid
-  - panel letters a,b,c... bold top-left
-  - model-type color families: Symbolic=blue, Neural=green, Tree/ensemble=gold
-  - PT-SR hero color = dark navy #08306B
-"""
 import matplotlib as _mpl
 _mpl.use("Agg")
 import matplotlib.pyplot as plt
 
-# ---- color system ----
 PT_HERO = "#08306B"
-PAL = {  # 10 SOTA models (figure display names)
+PAL = {
     "PT-SR (this work)":                 "#08306B",
     "Ouyang et al. (2018) SISSO":        "#2171B5",
     "Cranmer (2023) PySR":               "#6BAED6",
@@ -27,18 +15,16 @@ PAL = {  # 10 SOTA models (figure display names)
     "Wu et al. (2024) gplearn+RFR":      "#DAA520",
     "JMI Stacking (2024)":               "#E8C547",
 }
-CLASS = {  # model -> family
+CLASS = {
     "PT-SR (this work)":"Symbolic","Ouyang et al. (2018) SISSO":"Symbolic","Cranmer (2023) PySR":"Symbolic",
     "Jain et al. (2026) DNN":"Neural","Liu et al. (2024) MLP":"Neural",
     "Korkmaz et al. (2025) Transformer":"Neural","Zhang et al. (2024) LESets GNN":"Neural",
     "Liu et al. (2024) RF":"Tree/ensemble","Wu et al. (2024) gplearn+RFR":"Tree/ensemble","JMI Stacking (2024)":"Tree/ensemble",
 }
 FAMILY = {"Symbolic":"#2171B5","Neural":"#238B45","Tree/ensemble":"#DAA520"}
-# sequential single-hue for heatmaps / continuous (navy family)
 SEQ = "Blues"
 DIVERGE = "RdBu_r"
 
-# full target names (12) used across all figures
 TARGET_ORDER = ["Youngs_modulus","UTS","Disloc_0pct","Disloc_20pct","FCC_0pct","FCC_20pct",
                 "Other_0pct","Other_20pct","HCP_0pct","HCP_20pct","BCC_0pct","BCC_20pct"]
 TARGET_FULL = {
@@ -53,7 +39,6 @@ TARGET_SHORT = {k:v.replace(" phase fraction"," ").replace("Ultimate tensile str
                 for k,v in TARGET_FULL.items()}
 
 def apply():
-    """Set global rcParams. Call once at top of each figure script."""
     plt.rcParams.update({
         "font.family":"sans-serif","font.sans-serif":["Helvetica","Arial","DejaVu Sans"],
         "font.size":7,"axes.titlesize":8.5,"axes.labelsize":7.5,"legend.fontsize":6.6,

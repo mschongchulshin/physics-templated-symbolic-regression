@@ -1,8 +1,3 @@
-"""
-6-feature control SR — full-data fit (no CV), 5 seeds
-Usage: python3 src/run_6feat_control.py <seed_start> <seed_end>
-Saves: equations/control_6feat/{target}_seed{N}.json + sr_models/
-"""
 import pandas as pd, numpy as np, json, os, time, threading, sys, pickle
 from pathlib import Path
 from pysr import PySRRegressor

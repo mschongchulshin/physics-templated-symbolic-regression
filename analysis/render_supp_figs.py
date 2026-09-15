@@ -1,8 +1,3 @@
-"""
-Re-render S1a, S1b, S2, S3 without titles.
-svg.fonttype='none' for editable text in PPT/Illustrator.
-Output SVGs and source-data CSVs to results/generated/
-"""
 import numpy as np, pandas as pd, json, matplotlib
 matplotlib.use("Agg")
 matplotlib.rcParams['svg.fonttype'] = 'none'
@@ -17,7 +12,6 @@ OUTDIR.mkdir(parents=True, exist_ok=True)
 OUT = OUTDIR / "supp"; OUT.mkdir(exist_ok=True)
 BASE_FEAT = BASE / "data"
 
-# ── S1a: full 93-feature correlation heatmap ─────────────────────────────────
 print("S1a...", flush=True)
 df_full = pd.read_csv(BASE_FEAT / "features_93_library.csv")
 corr_full = df_full.corr(method="pearson")
@@ -37,11 +31,9 @@ fig.savefig(OUT / "S1a_full_corr.svg", bbox_inches="tight")
 fig.savefig(OUT / "S1a_full_corr.png", dpi=200, bbox_inches="tight")
 plt.close()
 
-# Source data: correlation matrix (93×93)
 corr_full.to_csv(OUT / "S1a_source_corr93.csv")
 print(f"  S1a done. shape={corr_full.shape}", flush=True)
 
-# ── S1b: VIF>50 selected 10-feature correlation matrix ───────────────────────
 print("S1b...", flush=True)
 df_vif50 = pd.read_csv(BASE_FEAT / "features_vif50.csv")
 corr_vif = df_vif50.corr(method="pearson")
@@ -64,7 +56,6 @@ plt.close()
 corr_vif.to_csv(OUT / "S1b_source_corr_vif50.csv")
 print(f"  S1b done. shape={corr_vif.shape}", flush=True)
 
-# ── S2 & S3: Optuna TPE convergence ──────────────────────────────────────────
 print("S2/S3...", flush=True)
 with open(OUTDIR / "optuna_conv_data.json") as f:
     conv = json.load(f)
@@ -104,7 +95,6 @@ def make_panel(conv_dict, models, colors, n_trials, fname_stem):
 make_panel(ml_conv, ML_MODELS, ML_COLORS, 50, "S3_optuna_ML")
 make_panel(dl_conv, DL_MODELS, DL_COLORS, 30, "S2_optuna_DL")
 
-# Source data CSVs for S2/S3
 rows_ml, rows_dl = [], []
 for mname in ML_MODELS:
     for tkey in tlist:

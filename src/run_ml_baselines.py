@@ -1,10 +1,3 @@
-"""
-ML baselines with Optuna hyperparameter optimization
-13-feature set (Set A), fullfit (no CV)
-Optuna: internal 15% val split for HP search
-Final: train on ALL data, report train R² × 5 seeds
-Output: results/ml_optuna_results.json
-"""
 import pandas as pd
 import numpy as np
 import json, os, warnings
@@ -48,7 +41,6 @@ ALL_TARGETS = {
     "Other_0pct": "Other 0%(%)", "Other_20pct": "Other 20%(%)",
 }
 
-# Internal val split indices (fixed, last 15%)
 n_val = max(1, int(len(X) * 0.15))
 tr_idx = np.arange(len(X) - n_val)
 va_idx = np.arange(len(X) - n_val, len(X))
@@ -147,7 +139,6 @@ for tkey, tcol in ALL_TARGETS.items():
         rc += 1
         print(f"[{rc}/{total}] {tkey} {mname} — optuna {N_TRIALS} trials...", flush=True)
 
-        # Optuna search on internal val split
         study = optuna.create_study(direction="maximize",
                                     sampler=optuna.samplers.TPESampler(seed=42))
         study.optimize(make_objective(mname, X, y),
@@ -156,7 +147,6 @@ for tkey, tcol in ALL_TARGETS.items():
         best_val_r2 = study.best_value
         print(f"  best val R²={best_val_r2:.4f}, params={best_params}")
 
-        # Final: train on ALL data, 5 seeds, report train R²
         seed_r2s = []
         for seed in SEEDS:
             m = make_model(mname, best_params, seed)

@@ -1,9 +1,3 @@
-"""
-ML Optuna CV re-run
-Loads best HP from ml_optuna_results_13feat.json (per target × model)
-Runs 5-fold GroupKFold × 5 seeds CV with those HP
-Output: ml_optuna_cv_results_13feat.json (same format as ML_Baselines)
-"""
 import pandas as pd
 import numpy as np
 import json, os, warnings
