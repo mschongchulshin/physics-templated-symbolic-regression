@@ -71,8 +71,7 @@ Unless noted, each command writes under `results/`.
 | Fig. 3 | the same run, which writes the elected equation per target to `equations/` |
 | Fig. 4 | `python analysis/shap_attribution.py && python analysis/shap_beeswarm.py` |
 | Fig. 5 | `python lodo/make_lodo_folds_all.py && python lodo/ptsr_main_lodo.py && python lodo/baselines_lodo.py run 4` |
-| Fig. 6a-h | `python inverse_design/run_inverse_design.py` |
-| Fig. 6i | `python inverse_design/analysis_roc_interaction.py` |
+| Fig. 6 | `python inverse_design/run_inverse_design.py` |
 | Supp. Figs. 1, 2 | `python analysis/render_supp_figs.py` |
 | Supp. Figs. 3-5 | `python analysis/sr_sensitivity_worker.py <worker_id> <n_workers>` then `python analysis/sr_sensitivity_plot.py` |
 | Supp. Fig. 6 | `python src/run_shuffled_y.py 0 5` |
