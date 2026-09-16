@@ -24,4 +24,4 @@ Redistribution here is under that licence, with the credit above.
 
 None. The file is byte-for-byte as deposited. The folds are cut in
 `lodo/make_lodo_folds_all.py`, which groups rows by alloy system and processing
-route and holds out one paper at a time; nothing is edited in the table.
+route and holds out one publication at a time; nothing is edited in the table.

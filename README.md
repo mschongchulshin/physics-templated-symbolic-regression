@@ -35,12 +35,12 @@ the response is approximately separable.
 
 ```
 data/          the corpus, its derived features, the experimental measurements
-               behind the leave-one-paper-out folds, and the two workbooks
+               behind the leave-one-dataset-out folds, and the two workbooks
                submitted with the paper
 equations/     all 660 discovered equations, sympy-parseable
 src/           the two-stage search, the nine templates, the ML and DL baselines
 baselines/     the published models re-trained on this corpus
-lodo/          leave-one-paper-out over eighteen folds
+lodo/          leave-one-dataset-out over eighteen folds
 inverse_design/  optimisation of the closed forms and the screening benchmark
 analysis/      SHAP attribution, the equivalence tests, hyperparameter sweeps,
                learning curves, supplementary figures
