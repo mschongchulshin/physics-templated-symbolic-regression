@@ -103,31 +103,25 @@ exact replay, at a large cost in wall time.
 
 ## Data
 
-### Molecular dynamics, the corpus the search trains on
-
-| File | What it holds |
-|---|---|
-| `data/CoCrCuFeNi_684.csv` | 232 compositions x 3 temperatures, all twelve targets. Supplementary Data 1 holds the 228 that were trained on; this adds the four held out for verification |
-| `data/Supplementary_Data_1_MD_corpus.xlsx` | the same corpus as submitted with the paper |
-| `data/compositions_228.csv` | the composition grid on its own |
-| `data/features_13.csv` | the thirteen model inputs, per sample |
-| `data/features_93_library.csv` | the feature library before VIF reduction, per sample. Source Data holds its correlation matrix, not the values |
-| `data/features_vif50.csv` | what survived VIF < 50, per sample, before the two removed on physical grounds |
-
-### Experimental, the measurements the cross-paper folds are cut from
-
-| File | What it holds |
-|---|---|
-| `data/LODO_experimental_dataset.csv` | the published alloy measurements, third party, see below |
-| `data/Supplementary_Data_2_LODO_dataset.xlsx` | the 390 rows used by the eighteen folds, as submitted with the paper |
-| `lodo/verified_V.pkl` | the 138 yield-strength rows checked against the original papers |
-| `lodo/verified_M.pkl`, `lodo/verified_F.pkl` | which rows fall in which fold, and the fold table |
-
-### Results
+### Submitted with the paper
 
 | File | What it holds |
 |---|---|
 | `data/Source_Data.xlsx` | the numbers behind every figure panel and supplementary table |
+| `data/Supplementary_Data_1_MD_corpus.xlsx` | the 684-point molecular-dynamics training corpus |
+| `data/Supplementary_Data_2_LODO_dataset.xlsx` | the 390 experimental rows the eighteen folds are built from |
+
+### What the code reads
+
+| File | What it holds |
+|---|---|
+| `data/CoCrCuFeNi_684.csv` | the corpus as the scripts read it. Supplementary Data 1 is the 228 compositions that were trained on; this adds the four held out for verification |
+| `data/features_13.csv` | the thirteen model inputs, per sample |
+| `data/features_93_library.csv` | the feature library before VIF reduction, per sample. Source Data holds its correlation matrix, not the values |
+| `data/features_vif50.csv` | what survived VIF < 50, per sample, before the two removed on physical grounds |
+| `data/LODO_experimental_dataset.csv` | the full published alloy table, third party, see below. Supplementary Data 2 is the subset the folds use |
+| `lodo/verified_V.pkl` | the 138 yield-strength rows checked against the original papers |
+| `lodo/verified_M.pkl`, `lodo/verified_F.pkl` | which rows fall in which fold, and the fold table |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
 | `results/cv_results/ptsr_best5_seeds.csv` | the five best-scoring seeds per target out of thirty, which the equivalence test compares |
 

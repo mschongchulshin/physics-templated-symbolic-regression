@@ -52,3 +52,4 @@ checkpoint_*.json
 # working copies of the deposited workbooks
 data/*_BAK*.xlsx
 data/*_BACKUP*.xlsx
+data/Source_Data_BAK*.xlsx
