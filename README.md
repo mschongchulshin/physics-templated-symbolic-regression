@@ -13,23 +13,22 @@ Code and data for **"Physics-Templated Symbolic Regression discovers closed-form
 
 ## Abstract
 
-High-entropy alloys open a composition space too large to search by experiment,
-and black-box machine-learning surrogates now predict their properties with R²
-above 0.99. A surrogate returns a number and not an equation, so its prediction
-cannot be interpreted, inspected against physical law, or differentiated for
-design. Here we constrain a symbolic-regression search with nine competing
-physical templates and let a model-selection criterion elect the winner for each
-property. Trained on a 684-point molecular-dynamics corpus of CoCrCuFeNi, our
-method returns one closed-form equation per target property. The equation for
-ultimate tensile strength reaches a test R² of 0.994 with only four parameters,
-replacing a surrogate that reaches the same accuracy with 4.4 × 10⁵. Used as a
-design objective, the equation extrapolates beyond the training envelope to
-compositions whose measured strength exceeds the highest and falls below the
-lowest in the corpus. The same procedure holds on independent experimental
-alloys sharing no elements with the corpus, reaching R² above 0.97 on folds of
-only four measurements, where black-box models fall below zero. The approach can
-be extended to any system where candidate physical laws are available but the
-form that governs the measured response is unknown.
+Black-box machine-learning models predict materials properties accurately, but
+they return models that domain researchers cannot interpret. SHAP attribution
+ranks inputs without revealing how they act. Here we introduce
+physics-templated symbolic regression (PT-SR), where candidate physical laws
+compete as templates and the Bayesian information criterion elects one
+closed-form equation per property. On high-entropy alloys, PT-SR matches
+state-of-the-art black-box models on key mechanical properties and the dominant
+FCC phase, with four parameters against up to 4.4 × 10⁵. The equations expose
+what SHAP cannot, such as element coefficient ratios, the channel of each
+element and an element acting only through temperature. Under
+leave-one-dataset-out cross-validation on published experimental data, PT-SR
+remains equivalent to state-of-the-art models. Molecular-dynamics simulations
+confirm that the differentiable equations enable inverse alloy design. By
+bridging accuracy with interpretability, PT-SR establishes symbolic regression
+as a practical route to governing laws wherever candidate physics exists and
+the response is approximately separable.
 
 ## Layout
 
@@ -70,7 +69,7 @@ Unless noted, each command writes under `results/`.
 | Fig. 2a, 2b | `python src/run_sr_template.py 0 5 && python src/compile_results.py` |
 | Fig. 3 | the same run, which writes the elected equation per target to `equations/` |
 | Fig. 4 | `python analysis/shap_attribution.py && python analysis/shap_beeswarm.py` |
-| Fig. 5 | `python lodo/make_lodo_folds_all.py && python lodo/ptsr_main_lodo.py && python lodo/baselines_lodo.py run 4` |
+| Fig. 5 | `python lodo/make_lodo_folds.py && python lodo/make_lodo_folds_all.py`, then `python lodo/ptsr_main_lodo.py`, then `python lodo/baselines_lodo.py run 4` |
 | Fig. 6 | `python inverse_design/run_inverse_design.py` |
 | Supp. Figs. 1, 2 | `python analysis/render_supp_figs.py` |
 | Supp. Figs. 3-5 | `python analysis/sr_sensitivity_worker.py <worker_id> <n_workers>` then `python analysis/sr_sensitivity_plot.py` |
@@ -79,6 +78,12 @@ Unless noted, each command writes under `results/`.
 | Supp. Note 3 | `python analysis/equivalence_tost.py` |
 | Supp. Table 13 | `python analysis/hume_rothery_ols.py` |
 | Optuna traces | `python analysis/optuna_convergence.py` |
+
+The Fig. 5 chain runs per property. The first command cuts the yield-strength
+folds and the second cuts the folds for the other five properties.
+`baselines_lodo.py` reads the yield-strength folds by default, and
+`LODO_PROP=UTS`, `elongation`, `HV` or `modulus` points it at one of the
+others. Density yields no usable fold and has no run.
 
 Scripts that produce the deposited inputs rather than a figure:
 
@@ -92,7 +97,6 @@ Scripts that produce the deposited inputs rather than a figure:
 | `results/cv_results/sr_6feat_control.csv` | `python src/run_6feat_control.py 0 5` |
 | learning curves over training-set fraction | `python analysis/lc_worker.py <worker_id> <n_workers>` |
 | the alloy-system pools the LOCO benchmark reads | `python lodo/make_property_pools.py` |
-
 
 The full symbolic-regression sweep is 2,700 runs and takes days on a laptop.
 It does not have to be rerun to check the paper: the finished sweep is in
@@ -135,7 +139,8 @@ exact replay, at a large cost in wall time.
 | `data/features_vif50.csv` | what survived VIF < 50, per sample, before the two removed on physical grounds |
 | `data/LODO_experimental_dataset.csv` | the full published alloy table, third party, see below. Supplementary Data 2 is the subset the folds use |
 | `lodo/verified_V.pkl` | the 138 yield-strength rows checked against the original papers |
-| `lodo/verified_M.pkl`, `lodo/verified_F.pkl` | which rows fall in which fold, and the fold table |
+| `lodo/verified_M.pkl` | which of those rows is train and which is test, per fold |
+| `lodo/verified_F.pkl` | the candidate yield-strength folds, with the reason each one was kept or dropped |
 | `equations/all_equations_660.json` | every discovered equation with its training fit and Pareto front |
 | `results/cv_results/ptsr_best5_seeds.csv` | the five best-scoring seeds per target out of thirty, which the equivalence test compares |
 
@@ -152,29 +157,6 @@ potential, available from
 unmodified and under its CC BY 4.0 licence, with the credit that licence
 requires. See `data/LODO_experimental_dataset_SOURCE.md`. Everything else in
 `data/` is ours.
-
-## Citation
-
-Cite the paper and, separately, the archived release of this code.
-
-```bibtex
-@article{ptsr2026,
-  title   = {Physics-Templated Symbolic Regression discovers closed-form,
-             differentiable equations for high-entropy alloy properties},
-  author  = {Shin, Hongchul and Moon, Chanhyuk and Jo, Hyeonjin and
-             Hwang, Kwang Yeon and Cheong, Jun Young and Jang, Hyo-Sun and
-             Yoon, Taeyoung},
-  year    = {2026}
-}
-
-@software{ptsr_code,
-  title     = {physics-templated-symbolic-regression},
-  author    = {Shin, Hongchul and Moon, Chanhyuk and Jo, Hyeonjin and
-               Hwang, Kwang Yeon and Cheong, Jun Young and Jang, Hyo-Sun and
-               Yoon, Taeyoung},
-  year      = {2026}
-}
-```
 
 ## License
 
