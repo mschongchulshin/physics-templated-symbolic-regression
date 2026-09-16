@@ -1,4 +1,4 @@
-import pandas as pd, numpy as np, json, os, time, threading, sys
+import pandas as pd, numpy as np, json, os, tempfile, time, threading, sys
 from pathlib import Path
 from pysr import PySRRegressor
 from sklearn.model_selection import GroupKFold
@@ -83,7 +83,8 @@ for tkey, tcol in ALL_TARGETS.items():
                 start_watchdog()
                 try:
                     m300 = Ta[tri] == 300
-                    tmpdir = str(TMP_DIR / f"shuf_{tkey}_{tn}_f{fold}_s{seed}")
+                    tmpdir = os.path.join(tempfile.gettempdir(),
+                                          f"shuf_{tkey}_{tn}_f{fold}_s{seed}")
                     os.makedirs(tmpdir, exist_ok=True)
 
                     if tn == 'free_1stage':

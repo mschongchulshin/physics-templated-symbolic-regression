@@ -187,9 +187,15 @@ for ji, (exp, tmpl, tkey, parsimony, niter, maxsize) in enumerate(my_jobs):
     if is_two:
         g_pred = compute_g_pred(tmpl, tkey)
         if g_pred is None:
-            rows.append({"experiment": exp, "model": tmpl, "target": tkey,
-                         "parsimony": parsimony, "niterations": niter, "seed": SEED,
-                         "train_r2_best": np.nan, "stage2_r2": np.nan})
+            skip = pd.DataFrame([{"experiment": exp, "model": tmpl,
+                                  "target": tkey, "parsimony": parsimony,
+                                  "niterations": niter, "seed": SEED,
+                                  "train_r2_best": np.nan,
+                                  "stage2_r2": np.nan}])
+            prior = pd.read_csv(OUT_CSV) if OUT_CSV.exists() else pd.DataFrame()
+            pd.concat([prior, skip], ignore_index=True).drop_duplicates(
+                subset=["model", "target", "parsimony", "niterations",
+                        "experiment"]).to_csv(OUT_CSV, index=False)
             continue
         s2_target = get_stage2_target(tmpl, y, g_pred)
         X_feat = get_stage2_features(tmpl, g_pred)

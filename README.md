@@ -80,6 +80,20 @@ Unless noted, each command writes under `results/`.
 | Supp. Table 13 | `python analysis/hume_rothery_ols.py` |
 | Optuna traces | `python analysis/optuna_convergence.py` |
 
+Scripts that produce the deposited inputs rather than a figure:
+
+| Produces | Command |
+|---|---|
+| `data/features_13.csv`, `data/features_93_library.csv`, `data/features_vif50.csv` | `python src/feature_engineering.py` |
+| `results/cv_results/ml_baselines_optuna.csv` | `python src/run_ml_baselines.py` then `python src/run_cv_ml.py` |
+| `results/cv_results/dl_models_optuna.csv` | `python src/run_deep_models.py` then `python src/run_cv_dl.py` |
+| `results/cv_results/gpr.csv` | `python src/run_gpr.py` |
+| `results/cv_results/sr_freeform.csv` | `python src/run_sr_freeform.py 0 5` |
+| `results/cv_results/sr_6feat_control.csv` | `python src/run_6feat_control.py 0 5` |
+| learning curves over training-set fraction | `python analysis/lc_worker.py <worker_id> <n_workers>` |
+| the alloy-system pools the LOCO benchmark reads | `python lodo/make_property_pools.py` |
+
+
 The full symbolic-regression sweep is 2,700 runs and takes days on a laptop.
 It does not have to be rerun to check the paper: the finished sweep is in
 `results/cv_results/sr_9templates_raw.csv`, the equations are in `equations/`,

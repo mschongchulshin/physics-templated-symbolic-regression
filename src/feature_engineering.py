@@ -23,7 +23,7 @@ SHEET_TEMP = {"80K": 80, "300K": 300, "1100K": 1100}
 
 REPO     = Path(__file__).resolve().parent.parent
 DATA_PATH = REPO / "data/CoCrCuFeNi_684.csv"
-OUT_DIR   = REPO / "data/features"
+OUT_DIR   = REPO / "data"
 
 EXCLUDE_PROPS = {
     "price_per_kg", "political_stability_of_top_producer",
