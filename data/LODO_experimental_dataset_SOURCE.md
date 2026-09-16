@@ -1,7 +1,7 @@
 # Third-party data
 
 `LODO_experimental_dataset.csv` is not ours. It is redistributed here so the
-cross-source folds can be rebuilt from a clone.
+folds can be rebuilt from a clone.
 
 ## Source
 
@@ -22,6 +22,6 @@ Redistribution here is under that licence, with the credit above.
 
 ## Modification
 
-None. The file is byte-for-byte as deposited. Selection of the evaluable folds
-happens in `lodo/build_folds.py`, which filters on composition family,
-processing route and held-out source; nothing is edited in the table.
+None. The file is byte-for-byte as deposited. The folds are cut in
+`lodo/make_lodo_folds_all.py`, which groups rows by alloy system and processing
+route and holds out one paper at a time; nothing is edited in the table.
