@@ -4,7 +4,7 @@ title: >-
   Physics-Templated Symbolic Regression discovers closed-form,
   differentiable equations for high-entropy alloy properties
 type: software
-version: 1.0.1
+version: 1.0.2
 doi: 10.5281/zenodo.22784255
 date-released: 2026-09-16
 repository-code: >-
