@@ -48,3 +48,7 @@ logs/
 # Checkpoint files
 done_*.json
 checkpoint_*.json
+
+# working copies of the deposited workbooks
+data/*_BAK*.xlsx
+data/*_BACKUP*.xlsx

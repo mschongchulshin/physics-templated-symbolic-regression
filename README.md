@@ -78,6 +78,7 @@ Unless noted, each command writes under `results/`.
 | Supp. Figs. 6, 7 | `python analysis/optuna_convergence.py` |
 | Supp. Fig. 8 | `python src/run_shuffled_y.py 0 5` |
 | Supp. Note 3 | `python analysis/equivalence_tost.py` |
+| Supp. Table 13 | `python analysis/hume_rothery_ols.py` |
 
 The full symbolic-regression sweep is 2,700 runs and takes days on a laptop.
 It does not have to be rerun to check the paper: the finished sweep is in
@@ -118,6 +119,7 @@ exact replay, at a large cost in wall time.
 | File | What it holds |
 |---|---|
 | `data/LODO_experimental_dataset.csv` | the published alloy measurements, third party, see below |
+| `data/Supplementary_Data_2_LODO_dataset.xlsx` | the 390 rows used by the eighteen folds, as submitted with the paper |
 | `lodo/verified_V.pkl` | the 138 yield-strength rows checked against the original papers |
 | `lodo/verified_M.pkl`, `lodo/verified_F.pkl` | which rows fall in which fold, and the fold table |
 
