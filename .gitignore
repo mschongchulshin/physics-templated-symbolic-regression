@@ -26,6 +26,7 @@ sr_models/
 *.pkl
 *.pt
 *.pth
+!lodo/verified_*.pkl
 
 # Temporary SR files
 tmp/
