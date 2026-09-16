@@ -75,10 +75,11 @@ Unless noted, each command writes under `results/`.
 | Fig. 6i | `python inverse_design/analysis_roc_interaction.py` |
 | Supp. Figs. 1, 2 | `python analysis/render_supp_figs.py` |
 | Supp. Figs. 3-5 | `python analysis/sr_sensitivity_worker.py <worker_id> <n_workers>` then `python analysis/sr_sensitivity_plot.py` |
-| Supp. Figs. 6, 7 | `python analysis/optuna_convergence.py` |
-| Supp. Fig. 8 | `python src/run_shuffled_y.py 0 5` |
+| Supp. Fig. 6 | `python src/run_shuffled_y.py 0 5` |
+| Supp. Fig. 7 | `python inverse_design/analysis_roc_interaction.py` |
 | Supp. Note 3 | `python analysis/equivalence_tost.py` |
 | Supp. Table 13 | `python analysis/hume_rothery_ols.py` |
+| Optuna traces | `python analysis/optuna_convergence.py` |
 
 The full symbolic-regression sweep is 2,700 runs and takes days on a laptop.
 It does not have to be rerun to check the paper: the finished sweep is in
