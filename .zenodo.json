@@ -1,6 +1,6 @@
 {
   "title": "Physics-Templated Symbolic Regression discovers closed-form, differentiable equations for high-entropy alloy properties",
-  "description": "<p>Code and data for the PT-SR framework: a two-stage symbolic regression in which a composition function is fitted at a single temperature and a temperature function is then fitted to the residual ratios under one of nine physics-motivated templates, with BIC selecting among them.</p><p>Contains the search and the nine templates, the nine published baselines re-trained on this corpus, the leave-one-dataset-out experiment over six cross-source folds, the inverse-design optimisation, the 684-point CoCrCuFeNi molecular-dynamics corpus, and all 660 discovered equations.</p>",
+  "description": "<p>Code and data for the PT-SR framework: a two-stage symbolic regression in which a composition function is fitted at a single temperature and a temperature function is then fitted to the residual ratios under one of nine physics-motivated templates, with BIC selecting among them.</p><p>Contains the search and the nine templates, the nine published baselines re-trained on this corpus, the leave-one-paper-out experiment over eighteen folds of published experimental alloys, the inverse-design optimisation, the 684-point CoCrCuFeNi molecular-dynamics corpus, and all 660 discovered equations.</p>",
   "upload_type": "software",
   "license": "mit",
   "access_right": "open",

@@ -4,6 +4,8 @@ title: >-
   Physics-Templated Symbolic Regression discovers closed-form,
   differentiable equations for high-entropy alloy properties
 type: software
+repository-code: >-
+  https://github.com/mschongchulshin/physics-templated-symbolic-regression
 license: MIT
 authors:
   - family-names: Shin
